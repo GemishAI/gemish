@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function PATCH(
   req: NextRequest,
-   params : Promise<{ params: { id: string } }>
+  params: Promise<{ id: string }>
 ) {
   const { id } = await params;
   try {

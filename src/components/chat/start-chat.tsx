@@ -5,8 +5,8 @@ import {
   PromptInputActions,
   PromptInputTextarea,
   PromptInputAction,
-} from "@/components/ui/prompt-input"
-import { PromptSuggestion } from "@/components/ui/prompt-suggestion"
+} from "@/components/prompt-kit/prompt-input"
+import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion"
 import { Button } from "@/components/ui/button"
 import { ArrowUpIcon, BrainIcon, Square } from "lucide-react"
 import { useState } from "react"
