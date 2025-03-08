@@ -46,7 +46,10 @@ export async function GET(
   return NextResponse.json(data);
 }
 
-export async function PATCH(req: NextRequest, params: Promise<{ id: string }>) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   try {
     const session = await auth.api.getSession({
@@ -92,7 +95,7 @@ export async function PATCH(req: NextRequest, params: Promise<{ id: string }>) {
 
 export async function DELETE(
   req: NextRequest,
-  params: Promise<{ id: string }>
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   try {
