@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Paperclip, X } from "lucide-react";
 import { type ChatRequestOptions } from "ai";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ChatInputProps {
   id: string;
@@ -64,20 +65,29 @@ export function StartChat({
   const handleSend = async () => {
     setIsSubmitting(true);
     if (input.trim()) {
-      await fetch("/api/chats", {
-        method: "POST",
-        body: JSON.stringify({
-          message: input,
-          id: id,
-        }),
-      }).finally(() => {
-        setIsSubmitting(false);
-      });
+      try {
+        const { id }: { id: string } = await fetch("/api/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: input,
+          }),
+        }).then((res) => res.json());
 
-      router.push(`/chat/${id}`);
-      handleSubmit(event, {
-        experimental_attachments: files,
-      });
+        router.push(`/chat/${id}`);
+        setIsSubmitting(false);
+        handleSubmit(event, {
+          experimental_attachments: files,
+        });
+      } catch (error) {
+        setIsSubmitting(false);
+        toast.error(
+          "Unable to start a new chat. Please check your connection and try again."
+        );
+        console.error("Chat creation failed:", error);
+        return;
+      }
+
       setFiles(undefined);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";

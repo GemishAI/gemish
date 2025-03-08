@@ -104,7 +104,10 @@ export function ChatInterface({
               <MessageAvatar src="/avatars/ai.png" alt="AI" fallback="AI" />
             )}
             {message.role === "user" ? (
-              <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
+              <MessageContent
+                key={message.id}
+                className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl"
+              >
                 {message.content}
               </MessageContent>
             ) : (

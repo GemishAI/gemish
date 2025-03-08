@@ -2,7 +2,6 @@ import { ChatUI } from "@/components/chat/chat-ui";
 import { loadChat } from "@/server/db/chat-store";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 
 import type { Message } from "ai";
 
@@ -18,7 +17,7 @@ export default async function ChatPage({
   });
 
   if (!session) {
-    return redirect("/login");
+    return null;
   }
 
   const data = await loadChat({ id, userId: session.user.id });
