@@ -12,7 +12,11 @@ export function Header() {
   return (
     <header className="flex justify-between items-center">
       <div className="md:fixed z-50 flex justify-between items-center top-0 px-6 py-2 w-full bg-background backdrop-filter backdrop-blur-sm bg-opacity-30">
-        <Link href="/" className="text-lg font-medium font-syne">
+        <Link
+          href="/"
+          prefetch={true}
+          className="text-lg font-medium font-syne"
+        >
           Gemish
         </Link>
 

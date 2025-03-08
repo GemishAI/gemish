@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { LoaderSpinner } from "@/components/loader-spinner";
 import { generateId } from "ai";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const id = generateId();
   return (
