@@ -144,6 +144,7 @@ export function StartChat({
             placeholder="Ask anything..."
             className="min-h-[44px]"
             onKeyDown={handleKeyDown}
+            disabled={isSubmitting}
           />
           <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
             <PromptInputAction tooltip="Attach files">
