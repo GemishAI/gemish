@@ -7,4 +7,4 @@ export const searchParams = {
   })
 }
  
-export const loadSearchParams = createSearchParamsCache(searchParams)
+export const searchParamsCache = createSearchParamsCache(searchParams)
