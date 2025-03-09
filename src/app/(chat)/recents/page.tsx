@@ -1,15 +1,7 @@
 "use client";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
-  HistoryIcon,
   SearchIcon,
   RefreshCcw,
   MessageSquareIcon,
@@ -20,8 +12,6 @@ import {
   EllipsisVerticalIcon,
   PlusCircle,
 } from "lucide-react";
-import useSWR from "swr";
-import { fetcher } from "@/lib/fetcher";
 import type { Chat } from "@/server/db/schema";
 import { LoaderSpinner } from "@/components/loader-spinner";
 import { format, isToday, isYesterday } from "date-fns";
@@ -31,6 +21,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { parseAsString, useQueryState } from "nuqs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +37,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import useSWRInfinite from "swr/infinite";
+
+const paginatedFetcher = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to fetch");
+  return response.json();
+};
 
 // Helper function to format dates using date-fns
 const formatDate = (date: Date) => {
@@ -101,8 +99,13 @@ const organizeChatsByDate = (
 export default function RecentsPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const { data, error, isLoading, mutate } = useSWR("/api/chats", fetcher);
-  const [searchQuery, setSearchQuery] = useState("");
+
+  const [searchQuery, setSearchQuery] = useQueryState(
+    "q",
+    parseAsString.withDefault("").withOptions({
+      shallow: false,
+    })
+  );
   const [isRetrying, setIsRetrying] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [chatToRename, setChatToRename] = useState<string | null>(null);
@@ -110,12 +113,46 @@ export default function RecentsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [pageIndex, setPageIndex] = useState(0);
+  const LIMIT = 20;
 
-  const chats: Chat[] = data || [];
+  // Create the URL with appropriate pagination and search parameters
+  const getKey = (index: number) => {
+    if (index === null) return null;
+    return `/api/chats?limit=${LIMIT}&offset=${index * LIMIT}${
+      searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""
+    }`;
+  };
+
+  // Use SWR with pagination
+  const { data, error, size, setSize, isLoading, isValidating, mutate } =
+    useSWRInfinite(getKey, paginatedFetcher, {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    });
+
+  // Calculate if we have more data to load
+  const hasMore = data?.[data.length - 1]?.pagination?.hasMore || false;
+
+  // Flatten all chat pages into a single array
+  const chats: Chat[] = data ? data.flatMap((page) => page.chats) : [];
   const filteredChats = chats.filter((chat) =>
     chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const organizedChats = organizeChatsByDate(filteredChats, pathname);
+
+  // Load more data when user scrolls to the bottom
+  const loadMore = () => {
+    if (!isValidating && hasMore) {
+      setSize(size + 1);
+    }
+  };
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setSize(1);
+  }, [searchQuery, setSize]);
 
   // Clear search when escape is pressed
   useEffect(() => {
@@ -170,54 +207,52 @@ export default function RecentsPage() {
   };
 
   const createNewChat = () => {
-    router.push("/chat/new");
+    router.push("/");
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto mt-6 px-4 md:px-0">
-      <div className="flex items-center justify-between pb-6">
-        <h1 className="text-2xl font-semibold">Your Conversations</h1>
+    <div className="w-full max-w-3xl mx-auto py-8 min-h-screen">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-semibold">Chats</h1>
         <Button onClick={createNewChat} className="gap-2">
           <PlusCircle className="h-4 w-4" />
           New Chat
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-        <div className="border-b p-4">
-          <div className="relative">
-            <SearchIcon
-              className={cn(
-                "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-opacity",
-                searchFocused || searchQuery ? "opacity-100" : "opacity-70"
-              )}
-            />
-            <Input
-              placeholder="Search your conversations..."
-              className="pl-10 bg-muted/50 border-muted"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                onClick={() => setSearchQuery("")}
-              >
-                <XIcon className="h-3 w-3" />
-                <span className="sr-only">Clear search</span>
-              </Button>
+      <div className="space-y-6 w-full mx-auto">
+        <div className="relative">
+          <SearchIcon
+            className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-opacity",
+              searchFocused || searchQuery ? "opacity-100" : "opacity-70"
             )}
-          </div>
+          />
+          <Input
+            placeholder="Search your conversations..."
+            className="pl-10 bg-background border"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+              onClick={() => setSearchQuery("")}
+            >
+              <XIcon className="h-3 w-3" />
+              <span className="sr-only">Clear search</span>
+            </Button>
+          )}
         </div>
 
-        <div className="flex-1 overflow-hidden min-h-[400px] max-h-[70vh]">
+        <div className="overflow-auto">
           {isLoading || isRetrying ? (
             <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                 <LoaderSpinner width="24" height="24" />
               </div>
               <h2 className="text-lg font-medium">
@@ -253,7 +288,7 @@ export default function RecentsPage() {
             <div className="flex flex-col items-center justify-center p-12 text-center">
               {searchQuery ? (
                 <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-4 mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 mx-auto">
                     <SearchIcon className="w-6 h-6 text-muted-foreground" />
                   </div>
                   <h2 className="text-lg font-medium">No matches found</h2>
@@ -272,7 +307,7 @@ export default function RecentsPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-4 mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4 mx-auto">
                     <MessageSquareIcon className="w-6 h-6 text-muted-foreground" />
                   </div>
                   <h2 className="text-lg font-medium">
@@ -293,97 +328,128 @@ export default function RecentsPage() {
               )}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto">
-              <div className="px-2 py-3 space-y-6">
-                {Object.entries(organizedChats)
-                  .sort(
-                    ([a], [b]) => getCategoryWeight(a) - getCategoryWeight(b)
-                  )
-                  .map(([category, categoryChats]) => (
-                    <div key={category} className="space-y-2">
-                      <h3 className="text-xs font-medium uppercase text-muted-foreground px-3 mb-2">
-                        {category}
-                      </h3>
-                      <div className="space-y-1">
-                        {categoryChats.map((chat) => (
-                          <div
-                            key={chat.id}
-                            className={cn(
-                              "flex items-center px-3 py-3 w-full rounded-md text-sm transition-colors group cursor-pointer",
-                              "hover:bg-accent hover:text-accent-foreground",
-                              "relative",
-                              chat.active &&
-                                "bg-accent text-accent-foreground font-medium"
-                            )}
+            <div className="space-y-8">
+              {Object.entries(organizedChats)
+                .sort(([a], [b]) => getCategoryWeight(a) - getCategoryWeight(b))
+                .map(([category, categoryChats]) => (
+                  <div key={category} className="space-y-3">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      {category}
+                    </h3>
+                    <div className="space-y-2">
+                      {categoryChats.map((chat) => (
+                        <div
+                          key={chat.id}
+                          className={cn(
+                            "flex items-center px-4 py-3 rounded-lg transition-colors group cursor-pointer border",
+                            "hover:bg-accent hover:border-accent hover:text-accent-foreground",
+                            chat.active &&
+                              "bg-accent/50 border-primary/20 text-foreground"
+                          )}
+                        >
+                          <Link
+                            href={`/chat/${chat.id}`}
+                            onClick={(e) => {
+                              if (e.target !== e.currentTarget) {
+                                e.preventDefault();
+                              }
+                            }}
+                            className="flex-1 min-w-0"
                           >
-                            <Link
-                              href={`/chat/${chat.id}`}
-                              onClick={(e) => {
-                                if (e.target !== e.currentTarget) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              className="flex-1 min-w-0"
-                            >
-                              <div className="flex items-center w-full gap-3 min-w-0">
-                                <MessageSquareIcon className="h-4 w-4 shrink-0 opacity-70" />
-                                <span className="truncate flex-1">
-                                  {chat.title || "Untitled conversation"}
-                                </span>
-                                {chat.active && (
-                                  <span className="w-1.5 h-1.5 bg-primary rounded-full shrink-0" />
-                                )}
+                            <div className="flex items-center w-full gap-3 min-w-0">
+                              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <MessageSquareIcon className="h-4 w-4 text-primary" />
                               </div>
-                            </Link>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                  }}
-                                >
-                                  <EllipsisVerticalIcon className="h-4 w-4" />
-                                  <span className="sr-only">Chat options</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="w-[180px]"
+                              <span className="truncate flex-1 font-medium">
+                                {chat.title || "Untitled conversation"}
+                              </span>
+                              {chat.active && (
+                                <span className="w-2 h-2 bg-primary rounded-full shrink-0" />
+                              )}
+                            </div>
+                          </Link>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100 ml-2"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
                               >
-                                <DropdownMenuItem
-                                  className="gap-2 cursor-pointer"
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    setChatToRename(chat.id);
-                                    setNewTitle(chat.title || "");
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  <span>Rename conversation</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    setChatToDelete(chat.id);
-                                  }}
-                                >
-                                  <Trash className="h-4 w-4" />
-                                  <span>Delete conversation</span>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        ))}
-                      </div>
+                                <EllipsisVerticalIcon className="h-4 w-4" />
+                                <span className="sr-only">Chat options</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-[180px]"
+                            >
+                              <DropdownMenuItem
+                                className="gap-2 cursor-pointer"
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setChatToRename(chat.id);
+                                  setNewTitle(chat.title || "");
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span>Rename conversation</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setChatToDelete(chat.id);
+                                }}
+                              >
+                                <Trash className="h-4 w-4" />
+                                <span>Delete conversation</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-              </div>
+                  </div>
+                ))}
+            </div>
+          )}
+          {/* Add infinite scrolling trigger at the bottom */}
+          {hasMore && (
+            <div
+              ref={(el) => {
+                if (el) {
+                  // Create an intersection observer
+                  const observer = new IntersectionObserver(
+                    (entries) => {
+                      if (entries[0].isIntersecting && !isValidating) {
+                        loadMore();
+                      }
+                    },
+                    { threshold: 0.5 }
+                  );
+                  observer.observe(el);
+                  return () => observer.disconnect();
+                }
+              }}
+              className="py-6 flex justify-center"
+            >
+              {isValidating ? (
+                <div className="flex items-center gap-2">
+                  <LoaderSpinner width="20" height="20" />
+                  <span className="text-sm text-muted-foreground">
+                    Loading more...
+                  </span>
+                </div>
+              ) : (
+                <Button variant="outline" onClick={loadMore}>
+                  Load more
+                </Button>
+              )}
             </div>
           )}
         </div>

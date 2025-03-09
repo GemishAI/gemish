@@ -5,13 +5,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
@@ -19,12 +13,10 @@ import { usePathname } from "next/navigation";
 import { MessageCirclePlus, MessagesSquare } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { NavUser } from "./nav-user";
-import { useRouter } from "next/navigation";
 import { NavChats } from "./nav-chats";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const router = useRouter();
   const { data: session } = useSession();
 
   if (!session) {
@@ -41,7 +33,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: isActive("/"),
       },
       {
-        title: "Recents",
+        title: "Recent Chats",
         url: "/recents",
         icon: MessagesSquare,
         isActive: isActive("/recents"),

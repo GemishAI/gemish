@@ -48,7 +48,7 @@ export async function saveChat({
         messages: serializedMessages,
         updatedAt: new Date(),
       })
-      .where(eq(chat.id, id));
+      .where(and(eq(chat.userId, userId), eq(chat.id, id)));
 
     return { success: true };
   } catch (error) {

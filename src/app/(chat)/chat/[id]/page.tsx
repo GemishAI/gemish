@@ -24,10 +24,12 @@ export default async function ChatPage({
 
   const chat = data;
 
+  console.log("chat page", chat);
+
   return (
     <div className="w-full max-w-3xl mx-auto h-screen">
       <div className="pb-16">
-        <ChatUI id={chat.id} initialMessages={chat.messages as Message[]} />
+        <ChatUI key={id} id={id} initialMessages={chat.messages as Message[]} />
       </div>
     </div>
   );

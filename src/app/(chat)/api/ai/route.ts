@@ -18,16 +18,15 @@ export async function POST(req: Request) {
   const { message, id }: { message: Message; id: string } = await req.json();
 
   console.log(message, id, "Message and ID");
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const previousMessages = await loadChat({ id, userId: session.user.id });
 
     const messages = appendClientMessage({

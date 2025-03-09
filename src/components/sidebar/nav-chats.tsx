@@ -20,17 +20,19 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export function NavChats() {
-  const {
-    data: chats,
-    isLoading,
-    error,
-    mutate,
-  } = useSWR<Chat[]>("/api/chats", fetcher);
+  const { data, isLoading, error, mutate } = useSWR<{
+    chats: Chat[];
+    pagination: {
+      total: number;
+      limit: number;
+      offset: number;
+    };
+  }>("/api/chats?limit=20", fetcher);
   const [isRetrying, setIsRetrying] = useState(false);
   const pathname = usePathname();
 
   // Limit to only the 20 most recent chats
-  const recentChats = chats?.slice(0, 20) || [];
+  const recentChats = data?.chats || [];
   const isActive = (url: string) => pathname === url;
 
   const handleRetry = async () => {

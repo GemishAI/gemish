@@ -3,7 +3,6 @@ import "@/styles/globals.css";
 import { Providers } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
-import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
   title: "Gemish",

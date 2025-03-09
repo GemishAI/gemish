@@ -3,14 +3,15 @@ import { auth } from "@/lib/auth";
 import { db } from "@/server/db";
 import { chat } from "@/server/db/schema";
 import { headers } from "next/headers";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { generateId } from "better-auth";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
+import { count, desc } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -19,17 +20,46 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const chats = await db.query.chat.findMany({
-    where: eq(chat.userId, session.user.id),
-  });
+  const { searchParams } = new URL(request.url);
+  const limit = parseInt(searchParams.get("limit") || "20");
+  const offset = parseInt(searchParams.get("offset") || "0");
+  const searchTerm = searchParams.get("search") || "";
 
-  return NextResponse.json(chats);
+  let query = db.select().from(chat).where(eq(chat.userId, session.user.id));
+
+  // Get total count for pagination
+  const totalResult = await db
+    .select({ count: count() })
+    .from(chat)
+    .where(eq(chat.userId, session.user.id))
+    .execute();
+
+  const total = totalResult[0].count;
+
+  // Get paginated results
+  const chats = await query
+    .limit(limit)
+    .offset(offset)
+    .orderBy(desc(chat.updatedAt))
+    .execute();
+
+  return NextResponse.json({
+    chats,
+    pagination: {
+      total,
+      limit,
+      offset,
+      hasMore: offset + chats.length < total,
+    },
+  });
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const id = generateId();
-  const { message }: { message: string; id: string } = body;
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { message, id }: { message: string; id: string } = body;
+
+  console.log(message);
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -39,15 +69,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    console.log("createing chat in db");
     await db.insert(chat).values({
       id,
-      title: "",
+      title: "New Chat",
       userId: session.user.id,
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
+    console.log("created chat to db");
+
+    // Do this function after the title has been returned
     after(async () => {
       // Generate title after the chat is created
       const { text: title } = await generateText({
@@ -66,6 +100,7 @@ export async function POST(req: NextRequest) {
       // Revalidate all data
       revalidatePath("/", "layout");
     });
+    console.log(id, "returned data");
 
     return NextResponse.json({ id }, { status: 200 });
   } catch (error) {

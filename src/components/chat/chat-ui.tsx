@@ -29,7 +29,6 @@ export function ChatUI({
     <div className="w-full flex flex-col">
       {messages.length === 0 && (
         <StartChat
-          id={id}
           fileInputRef={fileInputRef}
           input={input}
           setInput={setInput}

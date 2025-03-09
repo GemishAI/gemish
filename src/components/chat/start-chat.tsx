@@ -9,14 +9,14 @@ import {
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
 import { Button } from "@/components/ui/button";
 import { ArrowUpIcon, BrainIcon, Loader2Icon, Square } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Paperclip, X } from "lucide-react";
-import { type ChatRequestOptions } from "ai";
+import { generateId, type ChatRequestOptions } from "ai";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 
 interface ChatInputProps {
-  id: string;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleSubmit: (
     event?: {
@@ -31,7 +31,6 @@ interface ChatInputProps {
 }
 
 export function StartChat({
-  id,
   handleSubmit,
   input,
   setInput,
@@ -42,12 +41,51 @@ export function StartChat({
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  const { data: session } = useSession();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setFiles(event.target.files);
+  // Set up time update interval
+  useEffect(() => {
+    // Check for hour changes
+    const checkHourChange = () => {
+      const newHour = new Date().getHours();
+      if (newHour !== currentHour) {
+        setCurrentHour(newHour);
+      }
+    };
+
+    // Set interval to check every minute
+    intervalRef.current = setInterval(checkHourChange, 60000);
+
+    // Cleanup
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [currentHour]);
+
+  // Calculate greeting with useMemo to prevent recalculations
+  const greeting = useMemo(() => {
+    let timeGreeting = "";
+
+    if (currentHour >= 5 && currentHour < 12) {
+      timeGreeting = "Good morning";
+    } else if (currentHour >= 12 && currentHour < 17) {
+      timeGreeting = "Good afternoon";
+    } else {
+      timeGreeting = "Good evening";
     }
-  };
+
+    // Get the first name only
+    const firstName = session?.user?.name?.split(" ")[0] || "";
+
+    // Return the greeting with comma and first name if available
+    return firstName ? `${timeGreeting}, ${firstName}` : timeGreeting;
+  }, [currentHour, session?.user?.name]);
+
+  if (!session) return null;
 
   const handleRemoveFile = (index: number) => {
     if (files) {
@@ -64,6 +102,7 @@ export function StartChat({
 
   const handleSend = async () => {
     setIsSubmitting(true);
+    const idGen = generateId();
     if (input.trim()) {
       try {
         const { id }: { id: string } = await fetch("/api/chats", {
@@ -71,14 +110,14 @@ export function StartChat({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: input,
+            id: idGen,
           }),
         }).then((res) => res.json());
-
-        router.push(`/chat/${id}`);
-        setIsSubmitting(false);
         handleSubmit(event, {
           experimental_attachments: files,
         });
+        router.push(`/chat/${id}`);
+        setIsSubmitting(false);
       } catch (error) {
         setIsSubmitting(false);
         toast.error(
@@ -93,6 +132,12 @@ export function StartChat({
         fileInputRef.current.value = "";
       }
       setActiveCategory("");
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFiles(event.target.files);
     }
   };
 
@@ -120,9 +165,7 @@ export function StartChat({
   const showCategorySuggestions = activeCategory !== "";
   return (
     <div className="flex flex-col w-full h-full">
-      <h1 className="text-3xl font-semibold text-center mb-6">
-        What's on your mind?
-      </h1>
+      <h1 className="text-3xl font-semibold text-center mb-6">{greeting}</h1>
 
       <div className="flex w-full flex-col space-y-4">
         <PromptInput
