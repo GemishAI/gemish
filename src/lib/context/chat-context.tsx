@@ -33,6 +33,7 @@ interface ChatContextType {
   status: "submitted" | "streaming" | "ready" | "error";
   stop: () => void;
   reload: () => void;
+  isChatLoading: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -44,6 +45,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [pendingMessages, setPendingMessages] = useState<
     Record<string, Message>
   >({});
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   // Ref for tracking if AI response is needed (prevents unneeded re-renders)
   const needsAiResponse = useRef(false);
@@ -135,6 +137,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       try {
         // Create the chat on the server with the initial message
+        setIsChatLoading(true);
         const response = await fetch("/api/chats", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -150,6 +153,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         // Set this as the active chat
         setActiveChat(chatId);
+        setIsChatLoading(false);
         setMessages([initialMessageObj]);
 
         return chatId;
@@ -299,6 +303,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       status,
       stop,
       reload,
+      isChatLoading,
     }),
     [
       chats,
@@ -313,6 +318,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       status,
       stop,
       reload,
+      isChatLoading,
     ]
   );
 

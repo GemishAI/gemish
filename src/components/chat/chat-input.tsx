@@ -51,7 +51,7 @@ export function ChatInput({
             <Button
               size="sm"
               variant={"outline"}
-              className="h-8 w-8 rounded-full"
+              className="h-9 w-9 rounded-full"
             >
               <Paperclip className="text-primary size-5" />
             </Button>
@@ -91,17 +91,17 @@ export function ChatInput({
                 <Loader2Icon className="size-5 animate-spin" />
               </Button>
             ) : status === "streaming" ? (
-              <Button size="sm" className="h-8 w-8 rounded-full" onClick={stop}>
+              <Button size="sm" className="h-9 w-9 rounded-full" onClick={stop}>
                 <Square className="size-4 fill-current" />
               </Button>
             ) : (
               <Button
                 size="sm"
-                className="h-8 w-8 rounded-full"
+                className="h-9 w-9 rounded-full"
                 onClick={handleSend}
                 disabled={!input.trim()}
               >
-                <ArrowUpIcon className="h-4 w-4" />
+                <ArrowUpIcon className="size-5" />
               </Button>
             )}
           </PromptInputAction>
