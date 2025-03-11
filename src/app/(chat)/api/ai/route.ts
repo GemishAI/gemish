@@ -1,23 +1,28 @@
 import { auth } from "@/lib/auth";
-import { loadChat, saveChat } from "@/server/db/chat-store";
-import { google } from "@ai-sdk/google";
-import {
-  type Message,
-  appendClientMessage,
-  appendResponseMessages,
-  smoothStream,
-  streamText,
-} from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { appendClientMessage, appendResponseMessages, streamText } from "ai";
+import { google } from "@ai-sdk/google";
+import { saveChat } from "@/server/db/chat-store";
+import {
+  loadChatMessages,
+  validateChatOwnership,
+} from "@/server/db/message-loader";
+import { type Message, smoothStream } from "ai";
 
-// Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  // Get only the last message from the client
   const { message, id }: { message: Message; id: string } = await req.json();
 
-  console.log(message, id, "Message and ID");
+  if (!message || !id) {
+    return NextResponse.json(
+      { error: "Message and chat ID are required" },
+      { status: 400 }
+    );
+  }
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -27,10 +32,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const previousMessages = await loadChat({ id, userId: session.user.id });
+    // Validate the chat belongs to this user
+    const isValidChat = await validateChatOwnership(id, session.user.id);
+    if (!isValidChat) {
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
+    }
+
+    // Load previous messages from the database
+    const previousMessages = await loadChatMessages(id);
 
     const messages = appendClientMessage({
-      messages: previousMessages.messages as Message[],
+      messages: previousMessages[0].content === "" ? [] : previousMessages,
       message,
     });
 
@@ -39,26 +51,25 @@ export async function POST(req: Request) {
       messages,
       system:
         "You are a helpful assistant. Respond to the user in Markdown format.",
-      experimental_transform: smoothStream(),
-
+      experimental_transform: smoothStream({
+        delayInMs: 20,
+        chunking: "word",
+      }),
       async onFinish({ response }) {
-        const updatedMessages = appendResponseMessages({
-          messages,
-          responseMessages: response.messages,
-        });
-
-        console.log(`Saving ${updatedMessages.length} messages for chat ${id}`);
-
         await saveChat({
           id,
           userId: session.user.id,
-          messages: updatedMessages,
+          messages: appendResponseMessages({
+            messages: messages,
+            responseMessages: response.messages,
+          }),
         });
       },
     });
 
-    result.consumeStream();
-
+    // consume the stream to ensure it runs to completion & triggers onFinish
+    // even when the client response is aborted:
+    result.consumeStream(); // no await
     return result.toDataStreamResponse();
   } catch (error) {
     console.error("Error in AI API route:", error);

@@ -84,7 +84,7 @@ export function NavChats() {
           </div>
         )}
 
-        {recentChats.length > 0 && !isLoading && !isRetrying && (
+        {recentChats.length > 0 && !isLoading && !isRetrying && !error && (
           <SidebarMenu>
             {recentChats.map((chat) => (
               <SidebarMenuItem key={chat.id || chat.title}>

@@ -17,14 +17,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (session) {
-    return redirect("/");
-  }
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.variable, urbanist.variable, "antialiased")}>

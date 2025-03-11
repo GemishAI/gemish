@@ -1,36 +1,31 @@
-import { ChatUI } from "@/components/chat/chat-ui";
-import { loadChat } from "@/server/db/chat-store";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+"use client";
 
-import type { Message } from "ai";
+import { ChatInterface } from "@/components/chat/chat-interface";
+import { useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useChat } from "@/lib/context/chat-context";
 
-export default async function ChatPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default function ChatPage() {
+  const params = useParams();
+  const id = params?.id as string;
+  const { handleSubmit, pendingMessages } = useChat();
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  // Auto-trigger AI response for pending messages
+  useEffect(() => {
+    if (id && pendingMessages[id]) {
+      // Automatically trigger the AI response for the pending message
+      // Small delay to ensure the UI is ready
+      const timer = setTimeout(() => {
+        handleSubmit();
+      }, 100);
 
-  if (!session) {
-    return null;
-  }
-
-  const data = await loadChat({ id, userId: session.user.id });
-
-  const chat = data;
-
-  console.log("chat page", chat);
+      return () => clearTimeout(timer);
+    }
+  }, [id, pendingMessages, handleSubmit]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto h-screen">
-      <div className="pb-16">
-        <ChatUI key={id} id={id} initialMessages={chat.messages as Message[]} />
-      </div>
+    <div className="w-full max-w-3xl mx-auto h-full flex items-center justify-center">
+      <ChatInterface id={id} />
     </div>
   );
 }

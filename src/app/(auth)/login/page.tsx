@@ -14,11 +14,6 @@ type Provider = (typeof providers)[number];
 export default function Login() {
   const router = useRouter();
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
-  const session = useSession();
-
-  if (session.data?.user) {
-    return router.push("/");
-  }
 
   async function handleSocialLogin(provider: Provider) {
     setLoadingProvider(provider);

@@ -7,6 +7,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
 import { usePathname } from "next/navigation";
@@ -33,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isActive: isActive("/"),
       },
       {
-        title: "Recent Chats",
+        title: "Chats",
         url: "/recents",
         icon: MessagesSquare,
         isActive: isActive("/recents"),
@@ -43,7 +44,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar>
-      <SidebarHeader>
+      <SidebarHeader className="flex flex-col gap-3">
+        <nav className="flex flex-row justify-between items-center px-2">
+          <h1 className="text-lg font-semibold">Gemish</h1>
+          <SidebarTrigger />
+        </nav>
         <NavMain items={data.navMain} />
       </SidebarHeader>
       <SidebarContent>

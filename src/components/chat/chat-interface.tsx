@@ -1,98 +1,103 @@
 "use client";
 
+import React, { useRef, useEffect, useCallback } from "react";
 import {
   Message as MessageComponent,
   MessageAvatar,
   MessageContent,
 } from "@/components/prompt-kit/message";
 import { Button } from "@/components/ui/button";
-import { Message, ChatRequestOptions } from "ai";
-import { useRef } from "react";
 import {
   PromptInput,
   PromptInputActions,
   PromptInputTextarea,
   PromptInputAction,
 } from "@/components/prompt-kit/prompt-input";
-import { Paperclip, X, ArrowUpIcon, Square } from "lucide-react";
+import { ArrowUpIcon, Square } from "lucide-react";
+import { useChat } from "@/lib/context/chat-context";
+import { useDebouncedCallback } from "use-debounce";
+import { ChatContainer } from "@/components/prompt-kit/chat-container";
+import { ScrollButton } from "../prompt-kit/scroll-button";
 import { ChatMarkdown } from "./chat-markdown";
+import { Loader } from "../prompt-kit/loader";
 
 interface ChatInterfaceProps {
-  messages: Message[];
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  stop: () => void;
-  handleSubmit: (
-    event?: {
-      preventDefault?: () => void;
-    },
-    chatRequestOptions?: ChatRequestOptions
-  ) => void;
-  status: "submitted" | "streaming" | "ready" | "error";
-  input: string;
-  setInput: (input: string) => void;
-  files: FileList | undefined;
-  setFiles: React.Dispatch<React.SetStateAction<FileList | undefined>>;
+  id: string;
+}
+// Reducer for managing streaming message state
+function streamingReducer(
+  state: string | null,
+  action:
+    | { type: "START_STREAMING"; messageId: string }
+    | { type: "STOP_STREAMING" }
+): string | null {
+  switch (action.type) {
+    case "START_STREAMING":
+      return action.messageId;
+    case "STOP_STREAMING":
+      return null;
+    default:
+      return state;
+  }
 }
 
-export function ChatInterface({
-  messages,
-  fileInputRef,
-  stop,
-  handleSubmit,
-  status,
-  input,
-  setInput,
-  files,
-  setFiles,
-}: ChatInterfaceProps) {
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+export function ChatInterface({ id }: ChatInterfaceProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const submittedRef = useRef(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      setFiles(event.target.files);
-    }
-  };
+  const {
+    messages,
+    input,
+    setInput,
+    handleSubmit,
+    status,
+    stop,
+    setActiveChat,
+  } = useChat();
 
-  const handleRemoveFile = (index: number) => {
-    if (files) {
-      const dt = new DataTransfer();
-      Array.from(files).forEach((file, i) => {
-        if (i !== index) dt.items.add(file);
-      });
-      setFiles(dt.files);
-      if (fileInputRef.current) {
-        fileInputRef.current.files = dt.files;
+  useEffect(() => {
+    setActiveChat(id);
+    return () => {
+      submittedRef.current = false;
+    };
+  }, [id, setActiveChat]);
+
+  const handleInputChange = useCallback(
+    (value: string) => setInput(value),
+    [setInput]
+  );
+
+  const safeSendMessage = useCallback(() => {
+    if (submittedRef.current || !input.trim()) return;
+    submittedRef.current = true;
+    handleSubmit();
+  }, [input, handleSubmit]);
+
+  const handleSend = useDebouncedCallback(
+    (e?: React.FormEvent<HTMLFormElement>) => {
+      if (e) e.preventDefault();
+      safeSendMessage();
+    },
+    300,
+    { leading: true, trailing: false }
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        safeSendMessage();
       }
-    }
-  };
+    },
+    [safeSendMessage]
+  );
 
-  const handleSend = () => {
-    if (input.trim()) {
-      console.log("Sending:", input);
-      handleSubmit(event, {
-        experimental_attachments: files,
-      });
-      setFiles(undefined);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handlePromptInputValueChange = (value: string) => {
-    setInput(value);
-  };
+  const isInputDisabled = status === "submitted" || status === "streaming";
 
   return (
-    <div className=" h-screen w-full mt-20">
-      <div ref={chatContainerRef} className="h-full w-full space-y-6">
+    <div className="w-full h-full ">
+      <ChatContainer ref={containerRef} className="w-full p-4 space-y-6">
         {messages.map((message) => (
           <MessageComponent
             key={message.id}
@@ -101,109 +106,70 @@ export function ChatInterface({
             }
           >
             {message.role === "assistant" && (
-              <MessageAvatar src="/avatars/ai.png" alt="AI" fallback="AI" />
+              <MessageAvatar src="/avatars/gemini.png" alt="AI" fallback="AI" />
             )}
             {message.role === "user" ? (
-              <MessageContent
-                key={message.id}
-                className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl"
-              >
+              <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
                 {message.content}
               </MessageContent>
             ) : (
-              <div>
-                {status === "streaming" && (
-                  <ChatMarkdown key={message.id} content={message.content} />
-                )}
-                {status === "ready" && (
-                  <ChatMarkdown key={message.id} content={message.content} />
-                )}
-                {status === "submitted" && <div>Thinking....</div>}
-              </div>
+              <ChatMarkdown content={message.content} />
             )}
           </MessageComponent>
         ))}
-      </div>
-      <div className="fixed bottom-0 w-full inset-x-0">
-        <div className="flex w-full max-w-3xl mx-auto flex-col">
+
+        {status === "submitted" &&
+          messages.length > 0 &&
+          messages[messages.length - 1].role === "user" && (
+            <MessageComponent className="justify-start">
+              <MessageAvatar src="/avatars/gemini.png" alt="AI" fallback="AI" />
+              <Loader text="Thinking..." variant="text-shimmer" size="lg" />
+            </MessageComponent>
+          )}
+      </ChatContainer>
+      <div className="sticky bottom-0 inset-x-0 pb-6">
+        <div className="max-w-3xl mx-auto px-4">
           <PromptInput
             className="border-input bg-background border shadow-xs"
             value={input}
-            onValueChange={handlePromptInputValueChange}
+            onValueChange={handleInputChange}
             onSubmit={handleSend}
           >
-            {files && files.length > 0 && (
-              <div className="flex flex-wrap gap-2 pb-2">
-                {Array.from(files).map((file, index) => (
-                  <div
-                    key={index}
-                    className="bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
-                  >
-                    <Paperclip className="size-4" />
-                    <span className="max-w-[120px] truncate">{file.name}</span>
-                    <button
-                      onClick={() => handleRemoveFile(index)}
-                      className="hover:bg-secondary/50 rounded-full p-1"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
             <PromptInputTextarea
               placeholder="Ask anything..."
               className="min-h-[44px]"
               onKeyDown={handleKeyDown}
-              disabled={status === "streaming" || status === "submitted"}
+              disabled={isInputDisabled}
             />
-            <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-              <PromptInputAction tooltip="Attach files">
-                <label
-                  htmlFor="file-upload"
-                  className="hover:bg-secondary-foreground/10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-2xl"
-                >
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    ref={fileInputRef}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <Paperclip className="text-primary size-5" />
-                </label>
-              </PromptInputAction>
-
+            <PromptInputActions className="flex items-center justify-end gap-2 pt-2">
               <PromptInputAction
-                tooltip={
-                  status === "streaming" || status === "submitted"
-                    ? "Stop generation"
-                    : "Send message"
-                }
+                tooltip={isInputDisabled ? "Stop generation" : "Send message"}
               >
-                {status === "streaming" || status === "submitted" ? (
+                {isInputDisabled ? (
                   <Button
                     size="sm"
-                    className="h-9 w-9 rounded-full"
+                    className="h-8 w-8 rounded-full"
                     onClick={stop}
                   >
-                    <Square className="size-5 fill-current" />
+                    <Square className="size-4 fill-current" />
                   </Button>
                 ) : (
                   <Button
                     size="sm"
-                    className="h-9 w-9 rounded-full"
-                    onClick={handleSend}
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleSend()}
                     disabled={!input.trim()}
                   >
-                    <ArrowUpIcon className="h-4 w-4" />
+                    <ArrowUpIcon className="size-5" />
                   </Button>
                 )}
               </PromptInputAction>
             </PromptInputActions>
           </PromptInput>
         </div>
+      </div>
+      <div className="absolute bottom-4 right-4">
+        <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
       </div>
     </div>
   );

@@ -10,42 +10,6 @@ const patchSchema = z.object({
   title: z.string().min(1).max(100),
 });
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  console.log(id);
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const data = await db.query.chat.findFirst({
-    where: and(eq(chat.userId, session.user.id), eq(chat.id, id)),
-  });
-
-  if (!data) {
-    return NextResponse.json({ error: "Chat not found" }, { status: 404 });
-  }
-
-  // Parse messages if they're stored as a string
-  if (data.messages && typeof data.messages === "string") {
-    try {
-      data.messages = JSON.parse(data.messages);
-    } catch (e) {
-      console.error("Error parsing messages JSON:", e);
-      data.messages = [];
-    }
-  }
-
-  return NextResponse.json(data);
-}
-
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
