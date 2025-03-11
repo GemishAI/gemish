@@ -5,7 +5,6 @@ import { useChat } from "@/lib/context/chat-context";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { Card } from "@/components/ui/card";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ChevronDown,
@@ -17,14 +16,12 @@ import Link from "next/link";
 import { LoaderSpinner } from "@/components/loader-spinner";
 import type { Chat } from "@/server/db/schema";
 import { formatDistanceToNow } from "date-fns";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export default function ChatPage() {
-  const router = useRouter();
   const [isRetrying, setIsRetrying] = useState(false);
   const { isLoading, data, error, mutate } = useSWR(
-    "/api/chats?offset=6",
+    "/api/chats?limit=6",
     fetcher
   );
   const { setActiveChat } = useChat();
@@ -64,9 +61,7 @@ export default function ChatPage() {
       )}
       {error && (
         <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-          <h3 className="font-medium text-lg text-gray-800">
-            Unable to load conversations
-          </h3>
+          <h3 className="font-medium text-lg">Unable to load conversations</h3>
           <Button
             onClick={handleRetry}
             size="sm"
@@ -85,7 +80,7 @@ export default function ChatPage() {
               className=" flex items-center gap-2 cursor-pointer justify-center"
               onClick={() => setShowMoreOptions(!showMoreOptions)}
             >
-              <MessageSquare className="size-3" />
+              <MessageSquare className="size-4" />
               Your recent chats
               <motion.div
                 animate={{ rotate: showMoreOptions ? 180 : 0 }}
@@ -95,9 +90,12 @@ export default function ChatPage() {
               </motion.div>
             </div>
 
-            <Link className="flex items-center " href="/recents">
+            <Link
+              className="flex items-center hover:underline "
+              href="/recents"
+            >
               View All
-              <ArrowRight className="ml-2 size-3" />
+              <ArrowRight className="ml-2 size-4" />
             </Link>
           </div>
 
@@ -119,16 +117,20 @@ export default function ChatPage() {
                 }}
                 className="grid grid-cols-3 gap-3 overflow-hidden w-full"
               >
-                {chats.chats.map((chat) => (
-                  <Link
-                    key={chat.id}
-                    href={`/chat/${chat.id}`}
-                    className="flex flex-col justify-between shadow-xs py-4 px-4 h-[170px] hover:bg-muted transition-all cursor-pointer ease-in-out hover:shadow-sm rounded-xl border border-primay/50"
-                  >
-                    <MessageSquare className="size-4" />
-                    <h1 className=" text-lg font-medium ">{chat.title}</h1>
-                    <p className="text-sm">{formatDate(chat.updatedAt)}</p>
-                  </Link>
+                {chats.chats.map((chat: Chat) => (
+                  <motion.div>
+                    <Link
+                      key={chat.id}
+                      href={`/chat/${chat.id}`}
+                      className="flex flex-col justify-between shadow-xs py-4 px-4 h-40 hover:bg-muted transition-all cursor-pointer ease-in-out hover:shadow-sm rounded-xl border border-primay/50"
+                    >
+                      <MessageSquare className="size-4" />
+                      <h1 className=" text-lg font-medium truncate w-full text-balance">
+                        {chat.title}
+                      </h1>
+                      <p className="text-sm ">{formatDate(chat.updatedAt)}</p>
+                    </Link>
+                  </motion.div>
                 ))}
               </motion.div>
             )}

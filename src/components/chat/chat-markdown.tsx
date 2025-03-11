@@ -8,13 +8,7 @@ import { Check, Copy } from "lucide-react";
 import Marked, { type ReactRenderer } from "marked-react";
 import Image from "next/image";
 import Link from "next/link";
-import React, {
-  type JSX,
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 

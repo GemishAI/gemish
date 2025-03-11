@@ -6,39 +6,16 @@ import {
   MessageAvatar,
   MessageContent,
 } from "@/components/prompt-kit/message";
-import { Button } from "@/components/ui/button";
-import {
-  PromptInput,
-  PromptInputActions,
-  PromptInputTextarea,
-  PromptInputAction,
-} from "@/components/prompt-kit/prompt-input";
-import { ArrowUpIcon, Square } from "lucide-react";
 import { useChat } from "@/lib/context/chat-context";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatContainer } from "@/components/prompt-kit/chat-container";
 import { ScrollButton } from "../prompt-kit/scroll-button";
 import { ChatMarkdown } from "./chat-markdown";
 import { Loader } from "../prompt-kit/loader";
+import { ChatInput } from "./chat-input";
 
 interface ChatInterfaceProps {
   id: string;
-}
-// Reducer for managing streaming message state
-function streamingReducer(
-  state: string | null,
-  action:
-    | { type: "START_STREAMING"; messageId: string }
-    | { type: "STOP_STREAMING" }
-): string | null {
-  switch (action.type) {
-    case "START_STREAMING":
-      return action.messageId;
-    case "STOP_STREAMING":
-      return null;
-    default:
-      return state;
-  }
 }
 
 export function ChatInterface({ id }: ChatInterfaceProps) {
@@ -63,7 +40,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     };
   }, [id, setActiveChat]);
 
-  const handleInputChange = useCallback(
+  const handleValueChange = useCallback(
     (value: string) => setInput(value),
     [setInput]
   );
@@ -93,10 +70,8 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     [safeSendMessage]
   );
 
-  const isInputDisabled = status === "submitted" || status === "streaming";
-
   return (
-    <div className="w-full h-full ">
+    <div className="w-full h-full relative">
       <ChatContainer ref={containerRef} className="w-full p-4 space-y-6">
         {messages.map((message) => (
           <MessageComponent
@@ -127,49 +102,20 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
             </MessageComponent>
           )}
       </ChatContainer>
-      <div className="sticky bottom-0 inset-x-0 pb-6">
-        <div className="max-w-3xl mx-auto px-4">
-          <PromptInput
-            className="border-input bg-background border shadow-xs"
-            value={input}
-            onValueChange={handleInputChange}
-            onSubmit={handleSend}
-          >
-            <PromptInputTextarea
-              placeholder="Ask anything..."
-              className="min-h-[44px]"
-              onKeyDown={handleKeyDown}
-              disabled={isInputDisabled}
-            />
-            <PromptInputActions className="flex items-center justify-end gap-2 pt-2">
-              <PromptInputAction
-                tooltip={isInputDisabled ? "Stop generation" : "Send message"}
-              >
-                {isInputDisabled ? (
-                  <Button
-                    size="sm"
-                    className="h-8 w-8 rounded-full"
-                    onClick={stop}
-                  >
-                    <Square className="size-4 fill-current" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="h-8 w-8 rounded-full"
-                    onClick={() => handleSend()}
-                    disabled={!input.trim()}
-                  >
-                    <ArrowUpIcon className="size-5" />
-                  </Button>
-                )}
-              </PromptInputAction>
-            </PromptInputActions>
-          </PromptInput>
-        </div>
-      </div>
-      <div className="absolute bottom-4 right-4">
+      <div className="fixed bottom-4 right-4">
         <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
+      </div>
+      <div className="fixed bottom-0 inset-x-0 pb-6 bg-background">
+        <div className="max-w-3xl mx-auto px-4">
+          <ChatInput
+            input={input}
+            handleKeyDown={handleKeyDown}
+            handleValueChange={handleValueChange}
+            handleSend={handleSend}
+            status={status}
+            stop={stop}
+          />
+        </div>
       </div>
     </div>
   );

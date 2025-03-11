@@ -16,7 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.variable, urbanist.variable, "antialiased")}>
+      <body
+        className={cn(inter.variable, urbanist.variable, "antialiased dark")}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

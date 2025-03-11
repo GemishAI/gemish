@@ -1,34 +1,23 @@
 "use client";
 
 import type React from "react";
-
-import {
-  PromptInput,
-  PromptInputActions,
-  PromptInputTextarea,
-  PromptInputAction,
-} from "@/components/prompt-kit/prompt-input";
-import { Button } from "@/components/ui/button";
-import { ArrowUpIcon, Loader2Icon } from "lucide-react";
-import { useEffect, useMemo, useState, useRef } from "react";
-import { Paperclip, X, Brain, Globe } from "lucide-react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import { useChat } from "@/lib/context/chat-context";
 import { useDebouncedCallback } from "use-debounce";
+import { ChatInput } from "./chat-input";
 
 export function StartChat() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
   const { data: session } = useSession();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [status, setStatus] = useState<"submitted" | "ready">("ready");
 
   // Use the centralized chat context
-  const { input, setInput, createChat } = useChat();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { input, setInput, createChat, stop } = useChat();
 
   // Set up time update interval
   useEffect(() => {
@@ -71,9 +60,9 @@ export function StartChat() {
   }, [currentHour, session?.user?.name]);
 
   const handleSend = useDebouncedCallback(async () => {
-    if (!input.trim() || isSubmitting) return;
+    if (!input.trim() || status === "submitted") return;
 
-    setIsSubmitting(true);
+    setStatus("submitted");
 
     try {
       // Create a new chat with the initial message
@@ -87,7 +76,7 @@ export function StartChat() {
       );
       console.error("Chat creation failed:", error);
     } finally {
-      setIsSubmitting(false); // Ensure this resets even if there’s an error
+      setStatus("ready");
     }
   }, 300);
 
@@ -99,82 +88,26 @@ export function StartChat() {
     }
   };
 
-  const handleValueChange = (value: string) => {
-    setInput(value);
-  };
+  const handleValueChange = useCallback(
+    (value: string) => setInput(value),
+    [setInput]
+  );
 
   if (!session) return null;
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h1 className="text-4xl font-medium text-center mb-6">{greeting}</h1>
+      <h1 className="text-4xl font-medium text-center mb-10">{greeting}</h1>
 
       <div className="flex w-full flex-col space-y-4">
-        <PromptInput
-          className="border-input bg-background border shadow-xs"
-          value={input}
-          onValueChange={handleValueChange}
-          onSubmit={handleSend}
-        >
-          <PromptInputTextarea
-            placeholder="Ask anything..."
-            className="min-h-[55px]"
-            onKeyDown={handleKeyDown}
-            disabled={isSubmitting}
-          />
-          <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-            <div className="flex items-center gap-2">
-              <PromptInputAction tooltip="Attach files">
-                <Button
-                  size="sm"
-                  variant={"outline"}
-                  className="h-8 w-8 rounded-full"
-                >
-                  <Paperclip className="text-primary size-5" />
-                </Button>
-              </PromptInputAction>
-
-              <Button
-                size="sm"
-                variant={"outline"}
-                className="h-9 w-fit rounded-full "
-              >
-                <Globe className="text-primary size-5" />
-                Search
-              </Button>
-
-              <Button
-                size="sm"
-                variant={"outline"}
-                className="h-9 w-fit rounded-full"
-              >
-                <Brain className="text-primary size-5" />
-                Think
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <PromptInputAction
-                tooltip={isSubmitting ? "Submitting..." : "Send message"}
-              >
-                {isSubmitting ? (
-                  <Button size="sm" className="h-9 w-9 rounded-full" disabled>
-                    <Loader2Icon className="size-5 animate-spin" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="h-8 w-8 rounded-full"
-                    onClick={handleSend}
-                    disabled={!input.trim()}
-                  >
-                    <ArrowUpIcon className="h-4 w-4" />
-                  </Button>
-                )}
-              </PromptInputAction>
-            </div>
-          </PromptInputActions>
-        </PromptInput>
+        <ChatInput
+          input={input}
+          handleKeyDown={handleKeyDown}
+          handleValueChange={handleValueChange}
+          handleSend={handleSend}
+          status={status}
+          stop={stop}
+        />
       </div>
     </div>
   );
