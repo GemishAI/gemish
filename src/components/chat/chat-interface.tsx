@@ -13,6 +13,7 @@ import { ScrollButton } from "../prompt-kit/scroll-button";
 import { ChatMarkdown } from "./chat-markdown";
 import { Loader } from "../prompt-kit/loader";
 import { ChatInput } from "./chat-input";
+import { unstable_ViewTransition as ViewTransition } from "react";
 
 interface ChatInterfaceProps {
   id: string;
@@ -106,15 +107,17 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
         <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
       </div>
       <div className="fixed bottom-0 inset-x-0 pb-6 bg-background">
-        <div className="max-w-3xl mx-auto px-4">
-          <ChatInput
-            input={input}
-            handleKeyDown={handleKeyDown}
-            handleValueChange={handleValueChange}
-            handleSend={handleSend}
-            status={status}
-            stop={stop}
-          />
+        <div className="max-w-3xl w-full mx-auto px-4">
+          <ViewTransition name="chat-input">
+            <ChatInput
+              input={input}
+              handleKeyDown={handleKeyDown}
+              handleValueChange={handleValueChange}
+              handleSend={handleSend}
+              status={status}
+              stop={stop}
+            />
+          </ViewTransition>
         </div>
       </div>
     </div>

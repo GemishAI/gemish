@@ -43,7 +43,7 @@ export function ChatInput({
         placeholder="Ask anything..."
         className="min-h-[55px]"
         onKeyDown={handleKeyDown}
-        disabled={status === "submitted" || status === "streaming"}
+        disabled={status !== "ready"}
       />
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
         <div className="flex items-center gap-2">

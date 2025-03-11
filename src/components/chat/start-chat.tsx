@@ -8,6 +8,7 @@ import { useSession } from "@/lib/auth-client";
 import { useChat } from "@/lib/context/chat-context";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatInput } from "./chat-input";
+import { unstable_ViewTransition as ViewTransition } from "react";
 
 export function StartChat() {
   const router = useRouter();
@@ -100,14 +101,16 @@ export function StartChat() {
       <h1 className="text-4xl font-medium text-center mb-10">{greeting}</h1>
 
       <div className="flex w-full flex-col space-y-4">
-        <ChatInput
-          input={input}
-          handleKeyDown={handleKeyDown}
-          handleValueChange={handleValueChange}
-          handleSend={handleSend}
-          status={status}
-          stop={stop}
-        />
+        <ViewTransition name="chat-input">
+          <ChatInput
+            input={input}
+            handleKeyDown={handleKeyDown}
+            handleValueChange={handleValueChange}
+            handleSend={handleSend}
+            status={status}
+            stop={stop}
+          />
+        </ViewTransition>
       </div>
     </div>
   );
