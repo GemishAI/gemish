@@ -5,7 +5,7 @@ import { env } from "../env.mjs";
 import { db } from "@/server/db";
 
 const auth_prefix = "gemish:auth";
-export const cookiePrefix = "gemish-auth-session";
+export const cookiePrefix = "gemish:auth:cookie";
 
 const baseURL =
   process.env.NODE_ENV === "development"
