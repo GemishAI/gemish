@@ -17,9 +17,6 @@ export function AuthUIProviderWrapper({ children }: { children: ReactNode }) {
       replace={router.replace}
       onSessionChange={() => router.refresh()}
       LinkComponent={Link}
-      viewPaths={{
-        signIn: "login",
-      }}
     >
       {children}
     </AuthUIProvider>
