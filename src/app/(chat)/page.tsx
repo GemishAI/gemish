@@ -1,10 +1,9 @@
 "use client";
 
 import { StartChat } from "@/components/chat/start-chat";
-import { useChat } from "@/lib/context/chat-context";
+import { useChat } from "@/providers/chat-provider";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { fetcher } from "@/lib/fetcher";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ChevronDown,
@@ -20,10 +19,7 @@ import { Button } from "@/components/ui/button";
 
 export default function ChatPage() {
   const [isRetrying, setIsRetrying] = useState(false);
-  const { isLoading, data, error, mutate } = useSWR(
-    "/api/chats?limit=6",
-    fetcher
-  );
+  const { isLoading, data, error, mutate } = useSWR("/api/chats?limit=6");
   const { setActiveChat } = useChat();
   const [showMoreOptions, setShowMoreOptions] = useState(true);
 

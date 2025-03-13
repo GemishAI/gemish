@@ -5,10 +5,9 @@ import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
-import { useChat } from "@/lib/context/chat-context";
+import { useChat } from "@/providers/chat-provider";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatInput } from "./chat-input";
-import { unstable_ViewTransition as ViewTransition } from "react";
 
 export function StartChat() {
   const router = useRouter();

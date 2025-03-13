@@ -15,6 +15,7 @@ import { useChat as useAIChat } from "@ai-sdk/react";
 import { generateId } from "ai";
 import { type DebouncedState, useDebouncedCallback } from "use-debounce";
 import { createIdGenerator } from "ai";
+import { useSWRConfig } from "swr";
 
 interface ChatContextType {
   // Chat state
@@ -41,6 +42,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
+  const { mutate } = useSWRConfig();
   // State management
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [activeChat, setActiveChat] = useState<string | null>(null);
@@ -161,7 +163,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setActiveChat(chatId);
 
         setMessages([initialMessageObj]);
-
+        mutate(
+          (key) => typeof key === "string" && key.startsWith("/api/chats")
+        );
         return chatId;
       } catch (error) {
         // Clean up if creation failed

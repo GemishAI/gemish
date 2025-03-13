@@ -39,12 +39,6 @@ import {
 } from "@/components/ui/dialog";
 import useSWRInfinite from "swr/infinite";
 
-const paginatedFetcher = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Failed to fetch");
-  return response.json();
-};
-
 // Helper function to format dates using date-fns
 const formatDate = (date: Date) => {
   if (isToday(date)) return "Today";
@@ -128,7 +122,7 @@ export default function RecentsPage() {
 
   // Use SWR with pagination
   const { data, error, size, setSize, isLoading, isValidating, mutate } =
-    useSWRInfinite(getKey, paginatedFetcher, {
+    useSWRInfinite(getKey, {
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,

@@ -11,7 +11,6 @@ import {
 } from "../ui/sidebar";
 import Link from "next/link";
 import useSWR from "swr";
-import { fetcher } from "@/lib/fetcher";
 import type { Chat } from "@/server/db/schema";
 import { Button } from "../ui/button";
 import { useState } from "react";
@@ -27,7 +26,7 @@ export function NavChats() {
       limit: number;
       offset: number;
     };
-  }>("/api/chats?limit=20", fetcher);
+  }>("/api/chats?limit=20");
   const [isRetrying, setIsRetrying] = useState(false);
   const pathname = usePathname();
 
