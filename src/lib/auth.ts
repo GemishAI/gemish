@@ -6,7 +6,7 @@ import { db } from "@/server/db";
 import { polarClient } from "./polar";
 import { polar } from "@polar-sh/better-auth";
 
-const auth_prefix = "gemish:auth:dev";
+const auth_prefix = env.BETTER_AUTH_REDIS_PREFIX;
 
 const baseURL =
   process.env.NODE_ENV === "development"

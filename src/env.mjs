@@ -17,6 +17,7 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_ID: z.string().min(1),
     BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string().min(1),
     BETTER_AUTH_COOKIE_PREFIX: z.string().min(1),
+    BETTER_AUTH_REDIS_PREFIX: z.string().min(1),
 
     AWS_ACCESS_KEY_ID: z.string().min(1),
     AWS_SECRET_ACCESS_KEY: z.string().min(1),
@@ -44,7 +45,9 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_ID: process.env.BETTER_AUTH_GITHUB_CLIENT_ID,
     BETTER_AUTH_GITHUB_CLIENT_SECRET:
       process.env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
+    BETTER_AUTH_REDIS_PREFIX: process.env.BETTER_AUTH_REDIS_PREFIX,
     BETTER_AUTH_COOKIE_PREFIX: process.env.BETTER_AUTH_COOKIE_PREFIX,
+    BETTER_AUTH_REDIS_PREFIX: process.env.BETTER_AUTH_REDIS_PREFIX,
 
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
