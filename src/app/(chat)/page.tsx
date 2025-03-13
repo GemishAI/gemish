@@ -27,8 +27,6 @@ export default function ChatPage() {
   const { setActiveChat } = useChat();
   const [showMoreOptions, setShowMoreOptions] = useState(true);
 
-  const chats = data;
-
   // Clear active chat when visiting the start chat page
   useEffect(() => {
     setActiveChat(null);
@@ -50,7 +48,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col gap-10  mt-24 max-w-[750px] mx-auto w-full">
+    <div className="flex flex-col gap-10 py-24 max-w-[750px] mx-auto w-full">
       <div>
         <StartChat />
       </div>
@@ -73,11 +71,11 @@ export default function ChatPage() {
           </Button>
         </div>
       )}
-      {data && !error && !isLoading && (
+      {data && !error && !isLoading ? (
         <div className="flex flex-col gap-5 w-full">
           <div className="flex justify-between items-center w-full">
             <div
-              className=" flex items-center gap-2 cursor-pointer justify-center"
+              className="flex items-center gap-2 cursor-pointer justify-center"
               onClick={() => setShowMoreOptions(!showMoreOptions)}
             >
               <MessageSquare className="size-4" />
@@ -90,10 +88,7 @@ export default function ChatPage() {
               </motion.div>
             </div>
 
-            <Link
-              className="flex items-center hover:underline "
-              href="/recents"
-            >
+            <Link className="flex items-center hover:underline" href="/recents">
               View All
               <ArrowRight className="ml-2 size-4" />
             </Link>
@@ -117,25 +112,35 @@ export default function ChatPage() {
                 }}
                 className="grid grid-cols-3 gap-3 overflow-hidden w-full"
               >
-                {chats.chats.map((chat: Chat) => (
-                  <motion.div>
-                    <Link
-                      key={chat.id}
-                      href={`/chat/${chat.id}`}
-                      className="flex flex-col justify-between shadow-xs py-4 px-4 h-40 hover:bg-muted transition-all cursor-pointer ease-in-out hover:shadow-sm rounded-xl border border-primay/50"
-                    >
-                      <MessageSquare className="size-4" />
-                      <h1 className=" text-lg font-medium truncate w-full text-balance">
-                        {chat.title}
-                      </h1>
-                      <p className="text-sm ">{formatDate(chat.updatedAt)}</p>
-                    </Link>
-                  </motion.div>
-                ))}
+                {data.chats && data.chats.length > 0 ? (
+                  data.chats.map((chat: Chat) => (
+                    <motion.div key={chat.id}>
+                      <Link
+                        href={`/chat/${chat.id}`}
+                        className="flex flex-col justify-between shadow-xs py-4 px-4 h-40 hover:bg-muted transition-all cursor-pointer ease-in-out hover:shadow-sm rounded-xl border border-primay/50"
+                      >
+                        <MessageSquare className="size-4" />
+                        <h1 className="text-lg font-medium truncate w-full text-balance">
+                          {chat.title}
+                        </h1>
+                        <p className="text-sm">{formatDate(chat.updatedAt)}</p>
+                      </Link>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="col-span-3 text-center py-6">
+                    No recent chats found
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+      ) : (
+        !error &&
+        !isLoading && (
+          <div className="text-center py-4">No chats to display</div>
+        )
       )}
     </div>
   );

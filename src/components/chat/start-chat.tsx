@@ -94,23 +94,19 @@ export function StartChat() {
     [setInput]
   );
 
-  if (!session) return null;
-
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full ">
       <h1 className="text-4xl font-medium text-center mb-10">{greeting}</h1>
 
       <div className="flex w-full flex-col space-y-4">
-        <ViewTransition name="chat-input">
-          <ChatInput
-            input={input}
-            handleKeyDown={handleKeyDown}
-            handleValueChange={handleValueChange}
-            handleSend={handleSend}
-            status={status}
-            stop={stop}
-          />
-        </ViewTransition>
+        <ChatInput
+          input={input}
+          handleKeyDown={handleKeyDown}
+          handleValueChange={handleValueChange}
+          handleSend={handleSend}
+          status={status}
+          stop={stop}
+        />
       </div>
     </div>
   );

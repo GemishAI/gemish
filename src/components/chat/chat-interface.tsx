@@ -11,9 +11,11 @@ import { useDebouncedCallback } from "use-debounce";
 import { ChatContainer } from "@/components/prompt-kit/chat-container";
 import { ScrollButton } from "../prompt-kit/scroll-button";
 import { ChatMarkdown } from "./chat-markdown";
-import { Loader } from "../prompt-kit/loader";
 import { ChatInput } from "./chat-input";
 import { LoaderSpinner } from "../loader-spinner";
+import { Button } from "../ui/button";
+import { AIErrorMessage } from "./messages/ai-error-messge";
+import { AILoading } from "./messages/ai-loading";
 
 interface ChatInterfaceProps {
   id: string;
@@ -33,6 +35,8 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     stop,
     setActiveChat,
     isChatLoading,
+    error,
+    reload,
   } = useChat();
 
   useEffect(() => {
@@ -108,25 +112,16 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
               </MessageComponent>
             ))}
 
-            {status === "submitted" &&
-              messages.length > 0 &&
-              messages[messages.length - 1].role === "user" && (
-                <MessageComponent className="justify-start">
-                  <MessageAvatar
-                    src="/avatars/gemini.png"
-                    alt="AI"
-                    fallback="AI"
-                  />
-                  <Loader text="Thinking..." variant="text-shimmer" size="lg" />
-                </MessageComponent>
-              )}
+            <AIErrorMessage error={error} reload={reload} />
+
+            <AILoading status={status} messages={messages} />
           </ChatContainer>
           <div className="absolute bottom-4 right-4">
             <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
           </div>
         </>
       )}
-      <div className="fixed bottom-0 inset-x-0 pb-6 bg-background">
+      <div className="absolute bottom-0 inset-x-0 pb-6 bg-background">
         <div className="max-w-3xl w-full mx-auto px-4">
           <ChatInput
             input={input}

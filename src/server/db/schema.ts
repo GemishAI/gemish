@@ -3,7 +3,6 @@ import {
   boolean,
   index,
   json,
-  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -11,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { IdGenerator } from "@/config/id-generator";
 
 type TextUIPart = {
   type: "text";
@@ -54,7 +54,10 @@ type MessagePart =
 export const user = pgTable(
   "user",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => IdGenerator("user"))
+      .notNull(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull(),
@@ -72,7 +75,10 @@ export const user = pgTable(
 export const account = pgTable(
   "account",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => IdGenerator("acc"))
+      .notNull(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
@@ -96,7 +102,10 @@ export const account = pgTable(
 export const verification = pgTable(
   "verification",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => IdGenerator("ver"))
+      .notNull(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
@@ -161,4 +170,46 @@ export const message = pgTable(
       chatIdIdx: index("message_chatId_idx").on(table.chatId),
     };
   }
+);
+
+export const checkout = pgTable(
+  "checkouts",
+  {
+    id: text("id").primaryKey().notNull(), // Checkout session ID from Polar
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }), // Links to the user
+    status: text("status").notNull(),
+    totalAmount: text("total_amount").notNull(), // Store as string to avoid floating-point issues
+    currency: varchar("currency", { length: 10 }).notNull(),
+    metadata: json("metadata"), // Store any additional data
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("checkout_user_idx").on(table.userId),
+  })
+);
+
+export const subscription = pgTable(
+  "subscriptions",
+  {
+    id: text("id").primaryKey().notNull(), // Subscription ID from Polar
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }), // Links to the user
+    status: text("status", {
+      enum: ["active", "canceled", "revoked", "expired", "trialing"],
+    }).notNull(),
+    planId: text("plan_id").notNull(), // Reference to the plan
+    currentPeriodStart: timestamp("current_period_start").notNull(),
+    currentPeriodEnd: timestamp("current_period_end").notNull(),
+    canceledAt: timestamp("canceled_at"),
+    metadata: json("metadata"), // Store extra details like invoice details
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("subscription_user_idx").on(table.userId),
+  })
 );

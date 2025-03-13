@@ -20,7 +20,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import {
   DropdownMenu,
@@ -113,16 +113,18 @@ export default function RecentsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [pageIndex, setPageIndex] = useState(0);
   const LIMIT = 20;
 
   // Create the URL with appropriate pagination and search parameters
-  const getKey = (index: number) => {
-    if (index === null) return null;
-    return `/api/chats?limit=${LIMIT}&offset=${index * LIMIT}${
-      searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""
-    }`;
-  };
+  const getKey = useCallback(
+    (index: number) => {
+      if (index === null) return null;
+      return `/api/chats?limit=${LIMIT}&offset=${index * LIMIT}${
+        searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""
+      }`;
+    },
+    [searchQuery]
+  );
 
   // Use SWR with pagination
   const { data, error, size, setSize, isLoading, isValidating, mutate } =
@@ -133,21 +135,33 @@ export default function RecentsPage() {
     });
 
   // Calculate if we have more data to load
-  const hasMore = data?.[data.length - 1]?.pagination?.hasMore || false;
+  const hasMore = useMemo(
+    () => data?.[data.length - 1]?.pagination?.hasMore || false,
+    [data]
+  );
 
   // Flatten all chat pages into a single array
   const chats: Chat[] = data ? data.flatMap((page) => page.chats) : [];
-  const filteredChats = chats.filter((chat) =>
-    chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+
+  const filteredChats = useMemo(
+    () =>
+      chats.filter((chat) =>
+        chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    [chats, searchQuery]
   );
-  const organizedChats = organizeChatsByDate(filteredChats, pathname);
+
+  const organizedChats = useMemo(
+    () => organizeChatsByDate(filteredChats, pathname),
+    [pathname, filteredChats]
+  );
 
   // Load more data when user scrolls to the bottom
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (!isValidating && hasMore) {
       setSize(size + 1);
     }
-  };
+  }, [isValidating, hasMore, size, setSize]);
 
   // Reset pagination when search changes
   useEffect(() => {
@@ -166,45 +180,51 @@ export default function RecentsPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [searchQuery]);
 
-  const handleRetry = async () => {
+  const handleRetry = useCallback(async () => {
     setIsRetrying(true);
     try {
       await mutate();
     } finally {
       setIsRetrying(false);
     }
-  };
+  }, [mutate]);
 
-  const handleRename = async (id: string) => {
-    try {
-      setIsRenaming(true);
-      await fetch(`/api/chats/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle.trim() }),
-      });
-      await mutate();
-      setChatToRename(null);
-      setNewTitle("");
-    } catch (error) {
-      console.error("Failed to rename chat:", error);
-    } finally {
-      setIsRenaming(false);
-    }
-  };
+  const handleRename = useCallback(
+    async (id: string) => {
+      try {
+        setIsRenaming(true);
+        await fetch(`/api/chats/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle.trim() }),
+        });
+        await mutate();
+        setChatToRename(null);
+        setNewTitle("");
+      } catch (error) {
+        console.error("Failed to rename chat:", error);
+      } finally {
+        setIsRenaming(false);
+      }
+    },
+    [newTitle, mutate]
+  );
 
-  const handleDelete = async (id: string) => {
-    try {
-      setIsDeleting(true);
-      await fetch(`/api/chats/${id}`, { method: "DELETE" });
-      await mutate();
-      setChatToDelete(null);
-    } catch (error) {
-      console.error("Failed to delete chat:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        setIsDeleting(true);
+        await fetch(`/api/chats/${id}`, { method: "DELETE" });
+        await mutate();
+        setChatToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete chat:", error);
+      } finally {
+        setIsDeleting(false);
+      }
+    },
+    [mutate]
+  );
 
   const createNewChat = () => {
     router.push("/");

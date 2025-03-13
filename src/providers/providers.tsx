@@ -14,17 +14,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="system"
       enableSystem
     >
-      <AuthUIProviderWrapper>
-        <ChatProvider>
-          <SidebarProviderWrapper>
-            <NuqsAdapterProvider>
-              {children}
-              <Toaster richColors />
-              <Analytics mode="production" />
-            </NuqsAdapterProvider>
-          </SidebarProviderWrapper>
-        </ChatProvider>
-      </AuthUIProviderWrapper>
+      <ChatProvider>
+        <SidebarProviderWrapper>
+          <NuqsAdapterProvider>
+            {children}
+            <Toaster richColors />
+            <Analytics mode="production" />
+          </NuqsAdapterProvider>
+        </SidebarProviderWrapper>
+      </ChatProvider>
     </ThemeProvider>
   );
 }
@@ -37,11 +35,9 @@ export function AuthProviders({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <AuthUIProviderWrapper>
-        {children}
-        <Toaster richColors />
-        <Analytics mode="production" />
-      </AuthUIProviderWrapper>
+      {children}
+      <Toaster richColors />
+      <Analytics mode="production" />
     </ThemeProvider>
   );
 }

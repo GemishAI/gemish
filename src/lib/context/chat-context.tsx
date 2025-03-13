@@ -14,6 +14,7 @@ import { type Message } from "ai";
 import { useChat as useAIChat } from "@ai-sdk/react";
 import { generateId } from "ai";
 import { type DebouncedState, useDebouncedCallback } from "use-debounce";
+import { createIdGenerator } from "ai";
 
 interface ChatContextType {
   // Chat state
@@ -34,6 +35,7 @@ interface ChatContextType {
   stop: () => void;
   reload: () => void;
   isChatLoading: boolean;
+  error: Error | undefined;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -66,10 +68,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     stop,
     reload,
     setMessages,
+    error,
   } = useAIChat({
     api: "/api/ai",
     id: activeChat || undefined,
-    experimental_throttle: 16,
+    initialMessages: initialMessages(),
+    experimental_throttle: 50,
+    generateId: createIdGenerator({
+      prefix: "msgc",
+      separator: "_",
+    }),
     experimental_prepareRequestBody: useCallback(
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
@@ -87,7 +95,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       },
       [pendingMessages]
     ),
-    initialMessages: initialMessages(),
     onFinish: useCallback(
       (message: Message) => {
         if (!activeChat) return;
@@ -137,7 +144,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       try {
         // Create the chat on the server with the initial message
-        setIsChatLoading(true);
         const response = await fetch("/api/chats", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -153,7 +159,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         // Set this as the active chat
         setActiveChat(chatId);
-        setIsChatLoading(false);
+
         setMessages([initialMessageObj]);
 
         return chatId;
@@ -246,6 +252,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       // Fetch chat messages from server
       const fetchChatMessages = async () => {
+        setIsChatLoading(true);
         try {
           const response = await fetch(`/api/chats/${chatId}/messages`);
           const data = await response.json();
@@ -277,9 +284,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error("Failed to load chat:", error);
+          setIsChatLoading(false);
           if (activeChat === chatId) {
             setMessages([]);
           }
+        } finally {
+          setIsChatLoading(false);
         }
       };
 
@@ -304,6 +314,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       stop,
       reload,
       isChatLoading,
+      error,
     }),
     [
       chats,
@@ -319,6 +330,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       stop,
       reload,
       isChatLoading,
+      error,
     ]
   );
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomSettings } from "@/components/settings/account";
+
 import { searchParams } from "@/config/search-params";
 import { useQueryState } from "nuqs";
 import { Billing } from "@/components/settings/billing";
@@ -20,7 +20,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      {nav === "account" && <CustomSettings />}
+      {nav === "account" && <div>hello</div>}
       {nav === "billing" && <Billing />}
     </div>
   );

@@ -18,17 +18,13 @@ import { NavChats } from "./nav-chats";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const { data: session } = useSession();
-
-  if (!session) {
-    return null;
-  }
 
   const isActive = (url: string) => pathname === url;
+
   const data = {
     navMain: [
       {
-        title: "Start Chat",
+        title: "Start new chat",
         url: "/",
         icon: MessageCirclePlus,
         isActive: isActive("/"),
@@ -55,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavChats />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={session?.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

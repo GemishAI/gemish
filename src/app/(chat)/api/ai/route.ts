@@ -8,7 +8,14 @@ import {
   loadChatMessages,
   validateChatOwnership,
 } from "@/server/db/message-loader";
-import { type Message, smoothStream } from "ai";
+import { type Message, smoothStream, wrapLanguageModel } from "ai";
+import { cacheMiddleware } from "@/ai/cache-middleware";
+import { createIdGenerator } from "ai";
+
+const wrappedModel = wrapLanguageModel({
+  model: google("gemini-2.0-flash-001"),
+  middleware: cacheMiddleware,
+});
 
 export const maxDuration = 30;
 
@@ -47,13 +54,17 @@ export async function POST(req: Request) {
     });
 
     const result = streamText({
-      model: google("gemini-2.0-flash-001"),
+      model: wrappedModel,
       messages,
       system:
         "You are a helpful assistant. Respond to the user in Markdown format.",
       experimental_transform: smoothStream({
         delayInMs: 20,
         chunking: "word",
+      }),
+      experimental_generateMessageId: createIdGenerator({
+        prefix: "msgs",
+        separator: "_",
       }),
       async onFinish({ response }) {
         await saveChat({

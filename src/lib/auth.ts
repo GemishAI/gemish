@@ -3,20 +3,23 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { env } from "../env.mjs";
 import { db } from "@/server/db";
+import { polarClient } from "./polar";
+import { polar } from "@polar-sh/better-auth";
 
-const auth_prefix = "gemish:auth";
+const auth_prefix = "gemish:auth:dev";
 
 const baseURL =
   process.env.NODE_ENV === "development"
     ? "http://localhost:3000"
-    : "https://gemish-v2.vercel.app";
+    : "https://gemish.vercel.app";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
-  appName: "Gemish",
+  appName: env.BETTER_AUTH_APP_NAME,
   baseURL,
 
   advanced: {
     cookiePrefix: env.BETTER_AUTH_COOKIE_PREFIX,
+    generateId: false,
   },
 
   database: drizzleAdapter(db, {
@@ -72,4 +75,25 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       maxAge: 5 * 60,
     },
   },
+
+  plugins: [
+    polar({
+      client: polarClient,
+      createCustomerOnSignUp: true,
+      enableCustomerPortal: true,
+      checkout: {
+        enabled: true,
+        products: [
+          {
+            productId: "92fe154a-84c2-4e7d-b4e4-c0b39a418c06",
+            slug: "free",
+          },
+        ],
+        successUrl: "/success?checkout_id={CHECKOUT_ID}",
+      },
+      webhooks: {
+        secret: env.POLAR_WEBHOOK_SECRET,
+      },
+    }),
+  ],
 });

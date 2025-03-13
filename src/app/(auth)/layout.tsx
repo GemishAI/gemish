@@ -11,7 +11,13 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.variable, urbanist.variable, "antialiased")}>
+      <body
+        className={cn(
+          inter.variable,
+          urbanist.variable,
+          "antialiased flex items-center justify-center mx-auto min-h-screen max-w-3zl"
+        )}
+      >
         <AuthProviders>{children}</AuthProviders>
       </body>
     </html>

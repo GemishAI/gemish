@@ -8,6 +8,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
+import { Feedback } from "./components/feedback";
 
 export function NavMain({
   items,
@@ -31,6 +32,7 @@ export function NavMain({
           </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
+      <Feedback />
     </SidebarMenu>
   );
 }
