@@ -6,7 +6,7 @@ import {
   MessageAvatar,
   MessageContent,
 } from "@/components/prompt-kit/message";
-import { useChat } from "@/lib/context/chat-provider";
+import { useChat } from "@/providers/chat-provider";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatContainer } from "@/components/prompt-kit/chat-container";
 import { ScrollButton } from "../prompt-kit/scroll-button";
