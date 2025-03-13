@@ -66,10 +66,7 @@ export function StartChat() {
 
     try {
       // Create a new chat with the initial message
-      const chatId = await createChat(input);
-
-      // Navigate after the chat is created
-      router.push(`/chat/${chatId}`);
+      await createChat(input);
     } catch (error) {
       toast.error(
         "Unable to start a new chat. Please check your connection and try again."

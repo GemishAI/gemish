@@ -4,20 +4,10 @@ import { db } from "@/server/db";
 import { chat, message } from "@/server/db/schema";
 import { headers } from "next/headers";
 import { eq, and, desc, asc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
 import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
 import { google } from "@ai-sdk/google";
 import { generateId } from "ai";
-
-// Quick title generator - much faster than AI
-function generateQuickTitle(messageText: string): string {
-  // Get the first sentence, up to 30 chars
-  const firstSentence = messageText.split(/[.!?]/)[0];
-  return firstSentence.length > 30
-    ? `${firstSentence.substring(0, 27)}...`
-    : firstSentence;
-}
 
 // Background title generation with AI
 async function queueTitleGeneration(
@@ -37,9 +27,6 @@ async function queueTitleGeneration(
         .update(chat)
         .set({ title })
         .where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
-
-      // Revalidate to refresh UI with new title
-      revalidatePath(`/chat/${chatId}`);
     } catch (error) {
       console.error("Title generation failed:", error);
     }
@@ -82,15 +69,10 @@ export async function POST(request: NextRequest) {
   try {
     // Start a transaction to ensure both chat and message are created
     await db.transaction(async (tx) => {
-      // Generate a quick title from the first message
-      const quickTitle = messageText
-        ? generateQuickTitle(messageText)
-        : "New Chat";
-
       // Create the chat
       await tx.insert(chat).values({
         id,
-        title: quickTitle,
+        title: "(New Chat)",
         userId: session.user.id,
         createdAt: new Date(),
         updatedAt: new Date(),

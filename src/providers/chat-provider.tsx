@@ -16,6 +16,7 @@ import { generateId } from "ai";
 import { type DebouncedState, useDebouncedCallback } from "use-debounce";
 import { createIdGenerator } from "ai";
 import { useSWRConfig } from "swr";
+import { useRouter } from "next/navigation";
 
 interface ChatContextType {
   // Chat state
@@ -24,7 +25,7 @@ interface ChatContextType {
   pendingMessages: Record<string, Message>;
 
   // Chat actions
-  createChat: DebouncedState<(initialMessage: string) => Promise<string>>;
+  createChat: DebouncedState<(initialMessage: string) => Promise<void>>;
   setActiveChat: (chatId: string | null) => void;
 
   // AI chat interface (exposed from useAIChat)
@@ -43,6 +44,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { mutate } = useSWRConfig();
+  const router = useRouter();
   // State management
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [activeChat, setActiveChat] = useState<string | null>(null);
@@ -127,7 +129,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Create a new chat with an initial message - debounced to prevent accidental double creation
   const createChat = useDebouncedCallback(
-    async (initialMessage: string): Promise<string> => {
+    async (initialMessage: string) => {
       const chatId = generateId();
       const initialMessageObj: Message = {
         id: generateId(),
@@ -161,12 +163,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         // Set this as the active chat
         setActiveChat(chatId);
-
         setMessages([initialMessageObj]);
         mutate(
           (key) => typeof key === "string" && key.startsWith("/api/chats")
         );
-        return chatId;
+        router.push(`/chat/${chatId}`);
       } catch (error) {
         // Clean up if creation failed
         setChats((prev) => {
