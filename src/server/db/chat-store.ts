@@ -3,6 +3,7 @@ import { chat, message } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import type { Message as AIMessage } from "ai";
 import { generateId } from "ai";
+import { revalidateTag } from "next/cache";
 
 interface SaveChatParams {
   id: string;
@@ -25,20 +26,23 @@ export async function saveChat({ id, userId, messages }: SaveChatParams) {
       await tx.insert(chat).values({
         id,
         userId,
-        title: "New Chat", // Default title
+        title: "(New Chat)", // Default title
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+      revalidateTag(`chats-${userId}`);
     } else {
       // Update the chat's updatedAt timestamp
       await tx
         .update(chat)
         .set({ updatedAt: new Date() })
         .where(eq(chat.id, id));
+      revalidateTag(`chat-messages-${id}`);
     }
 
     // Delete existing messages for this chat
     await tx.delete(message).where(eq(message.chatId, id));
+    revalidateTag(`chat-messages-${id}`);
 
     for (const msg of messages) {
       await tx.insert(message).values({
@@ -70,6 +74,7 @@ export async function saveChat({ id, userId, messages }: SaveChatParams) {
           (firstUserMessage.content.length > 30 ? "..." : "");
 
         await tx.update(chat).set({ title }).where(eq(chat.id, id));
+        revalidateTag(`chat-messages-${id}`);
       }
     }
   });

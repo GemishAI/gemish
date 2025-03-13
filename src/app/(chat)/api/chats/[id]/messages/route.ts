@@ -4,6 +4,8 @@ import { db } from "@/server/db";
 import { chat, message } from "@/server/db/schema";
 import { headers } from "next/headers";
 import { eq, and, asc } from "drizzle-orm";
+import { unstable_cache as cache } from "next/cache";
+import { validateChatOwnership } from "@/server/db/message-loader";
 
 export async function GET(
   request: NextRequest,
@@ -19,23 +21,28 @@ export async function GET(
 
   try {
     // First verify the chat belongs to the user
-    const chatRecord = await db
-      .select()
-      .from(chat)
-      .where(and(eq(chat.id, chatId), eq(chat.userId, session.user.id)))
-      .execute();
 
-    if (chatRecord.length === 0) {
+    const chatRecord = await validateChatOwnership(chatId, session.user.id);
+
+    if (chatRecord) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
     // Fetch all messages for this chat
-    const messages = await db
-      .select()
-      .from(message)
-      .where(eq(message.chatId, chatId))
-      .orderBy(asc(message.createdAt))
-      .execute();
+    const cachedMessages = cache(
+      async () => {
+        return await db
+          .select()
+          .from(message)
+          .where(eq(message.chatId, chatId))
+          .orderBy(asc(message.createdAt))
+          .execute();
+      },
+      [`chat-messages-${chatId}`],
+      { revalidate: 3600, tags: [`chat-messages-${chatId}`] }
+    );
+
+    const messages = await cachedMessages();
 
     // Transform database messages to AI SDK message format
     const aiMessages = messages.map((msg) => ({

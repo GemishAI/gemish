@@ -3,6 +3,7 @@ import { message } from "@/server/db/schema";
 import { eq, asc, and } from "drizzle-orm";
 import type { Message as AIMessage } from "ai";
 import { chat } from "@/server/db/schema";
+import { unstable_cache as cache } from "next/cache";
 
 /**
  * Loads all messages for a specific chat
@@ -10,12 +11,20 @@ import { chat } from "@/server/db/schema";
 export async function loadChatMessages(chatId: string): Promise<AIMessage[]> {
   try {
     // Fetch all messages for this chat
-    const messages = await db
-      .select()
-      .from(message)
-      .where(eq(message.chatId, chatId))
-      .orderBy(asc(message.createdAt))
-      .execute();
+    const data = cache(
+      async () => {
+        return await db
+          .select()
+          .from(message)
+          .where(eq(message.chatId, chatId))
+          .orderBy(asc(message.createdAt))
+          .execute();
+      },
+      [`chat-messages-${chatId}`],
+      { revalidate: 3600, tags: ["posts"] }
+    );
+
+    const messages = await data();
 
     // Transform database messages to AI SDK message format
     return messages.map((msg) => ({
@@ -39,11 +48,15 @@ export async function validateChatOwnership(
   userId: string
 ): Promise<boolean> {
   try {
-    const chatRecord = await db
-      .select({ id: chat.id })
-      .from(chat)
-      .where(and(eq(chat.id, chatId), eq(chat.userId, userId)))
-      .execute();
+    const cachedChatRecord = cache(async () => {
+      return await db
+        .select()
+        .from(chat)
+        .where(and(eq(chat.id, chatId), eq(chat.userId, userId)))
+        .execute();
+    }, [`chats-${userId}`]);
+
+    const chatRecord = await cachedChatRecord();
 
     return chatRecord.length > 0;
   } catch (error) {

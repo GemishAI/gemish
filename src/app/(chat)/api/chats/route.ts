@@ -8,6 +8,8 @@ import { generateText } from "ai";
 import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
 import { google } from "@ai-sdk/google";
 import { generateId } from "ai";
+import { revalidateTag } from "next/cache";
+import { unstable_cache as cache } from "next/cache";
 
 // Background title generation with AI
 async function queueTitleGeneration(
@@ -27,6 +29,7 @@ async function queueTitleGeneration(
         .update(chat)
         .set({ title })
         .where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
+      revalidateTag(`chats-${userId}`);
     } catch (error) {
       console.error("Title generation failed:", error);
     }
@@ -44,14 +47,22 @@ export async function GET(request: NextRequest) {
   const limit = Number.parseInt(searchParams.get("limit") || "20");
   const offset = Number.parseInt(searchParams.get("offset") || "0");
 
-  const chats = await db
-    .select()
-    .from(chat)
-    .where(eq(chat.userId, session.user.id))
-    .limit(limit)
-    .offset(offset)
-    .orderBy(desc(chat.updatedAt))
-    .execute();
+  const data = cache(
+    async () => {
+      return await db
+        .select()
+        .from(chat)
+        .where(eq(chat.userId, session.user.id))
+        .limit(limit)
+        .offset(offset)
+        .orderBy(desc(chat.updatedAt))
+        .execute();
+    },
+    [`chats-${session.user.id}`],
+    { revalidate: 3600, tags: [`chats-${session.user.id}`] }
+  );
+
+  const chats = await data();
 
   return NextResponse.json({ chats });
 }
@@ -77,6 +88,8 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+
+      revalidateTag(`chats-${session.user.id}`);
 
       // If a message was provided, store it immediately
       if (messageText) {
