@@ -3,7 +3,6 @@
 import { StartChat } from "@/components/chat/start-chat";
 import { useChat } from "@/providers/chat-provider";
 import { useEffect, useState } from "react";
-import useSWR from "swr";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ChevronDown,
@@ -16,10 +15,11 @@ import { LoaderSpinner } from "@/components/loader-spinner";
 import type { Chat } from "@/server/db/schema";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { useChats } from "@/hooks/use-chats";
 
 export default function ChatPage() {
   const [isRetrying, setIsRetrying] = useState(false);
-  const { isLoading, data, error, mutate } = useSWR("/api/chats?limit=6");
+  const { isLoading, data, error, mutate } = useChats({ limit: "6" });
   const { setActiveChat } = useChat();
   const [showMoreOptions, setShowMoreOptions] = useState(true);
 

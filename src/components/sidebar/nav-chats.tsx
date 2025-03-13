@@ -10,23 +10,15 @@ import {
   SidebarMenuSkeleton,
 } from "../ui/sidebar";
 import Link from "next/link";
-import useSWR from "swr";
-import type { Chat } from "@/server/db/schema";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useChats } from "@/hooks/use-chats";
 
 export function NavChats() {
-  const { data, isLoading, error, mutate } = useSWR<{
-    chats: Chat[];
-    pagination: {
-      total: number;
-      limit: number;
-      offset: number;
-    };
-  }>("/api/chats?limit=20");
+  const { data, isLoading, error, mutate } = useChats({ limit: "20" });
   const [isRetrying, setIsRetrying] = useState(false);
   const pathname = usePathname();
 
@@ -59,9 +51,7 @@ export function NavChats() {
 
         {error && (
           <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-            <h3 className="font-medium text-gray-800">
-              Unable to load conversations
-            </h3>
+            <h3 className="font-medium">Unable to load conversations</h3>
             <Button
               onClick={handleRetry}
               size="sm"
@@ -76,7 +66,7 @@ export function NavChats() {
 
         {recentChats.length === 0 && !error && !isLoading && !isRetrying && (
           <div className="flex flex-col items-center justify-center gap-1 p-4 text-center">
-            <h3 className="font-medium text-gray-800">No conversations yet</h3>
+            <h3 className="font-medium ">No conversations yet</h3>
             <p className="text-sm text-gray-500">
               Your recent conversations will appear here
             </p>
