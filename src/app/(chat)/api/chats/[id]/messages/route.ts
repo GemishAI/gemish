@@ -1,10 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/server/db";
-import { chat, message } from "@/server/db/schema";
+import { message } from "@/server/db/schema";
 import { headers } from "next/headers";
-import { eq, and, asc } from "drizzle-orm";
-import { unstable_cache as cache } from "next/cache";
+import { eq, asc } from "drizzle-orm";
 import { validateChatOwnership } from "@/server/db/message-loader";
 
 export async function GET(
@@ -29,20 +28,12 @@ export async function GET(
     }
 
     // Fetch all messages for this chat
-    const cachedMessages = cache(
-      async () => {
-        return await db
-          .select()
-          .from(message)
-          .where(eq(message.chatId, chatId))
-          .orderBy(asc(message.createdAt))
-          .execute();
-      },
-      [`chat-messages-${chatId}`],
-      { revalidate: 3600, tags: [`chat-messages-${chatId}`] }
-    );
-
-    const messages = await cachedMessages();
+    const messages = await db
+      .select()
+      .from(message)
+      .where(eq(message.chatId, chatId))
+      .orderBy(asc(message.createdAt))
+      .execute();
 
     // Transform database messages to AI SDK message format
     const aiMessages = messages.map((msg) => ({

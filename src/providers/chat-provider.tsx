@@ -164,10 +164,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Set this as the active chat
         setActiveChat(chatId);
         setMessages([initialMessageObj]);
+        router.push(`/chat/${chatId}`);
         mutate(
           (key) => typeof key === "string" && key.startsWith("/api/chats")
         );
-        router.push(`/chat/${chatId}`);
       } catch (error) {
         // Clean up if creation failed
         setChats((prev) => {
