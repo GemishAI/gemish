@@ -1,13 +1,9 @@
-import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Providers } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Gemish",
-  description: "Gemini AI Chatbot",
-};
+export { metadata } from "@/config/metadata";
 
 export default function RootLayout({
   children,

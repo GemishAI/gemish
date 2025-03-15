@@ -8,6 +8,7 @@ import { generateText } from "ai";
 import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
 import { google } from "@ai-sdk/google";
 import { generateId } from "ai";
+import { gemish } from "@/ai/model";
 
 // Background title generation with AI
 async function queueTitleGeneration(
@@ -18,7 +19,7 @@ async function queueTitleGeneration(
   setTimeout(async () => {
     try {
       const { text: title } = await generateText({
-        model: google("gemini-2.0-flash-lite-preview-02-05"),
+        model: gemish.languageModel("fast"),
         system: TITLE_GENERATOR_SYSTEM_PROMPT,
         prompt: `Generate a title for the following conversation: ${messageText}`,
       });

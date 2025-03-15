@@ -78,6 +78,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     id: activeChat || undefined,
     initialMessages: initialMessages(),
     experimental_throttle: 50,
+    sendExtraMessageFields: true,
     generateId: createIdGenerator({
       prefix: "msgc",
       separator: "_",
@@ -95,7 +96,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
 
         // Fallback for empty conversations
-        return { messages, id };
+        return { messages, id, model: "fast" };
       },
       [pendingMessages]
     ),

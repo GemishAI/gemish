@@ -23,7 +23,7 @@ export async function GET(
 
     const chatRecord = await validateChatOwnership(chatId, session.user.id);
 
-    if (chatRecord) {
+    if (!chatRecord) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 

@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { AuthProviders } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
+
+export { metadata } from "@/config/metadata";
 
 export default async function RootLayout({
   children,
