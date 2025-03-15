@@ -1,7 +1,9 @@
 {
-  "name": "gemish-web-v2",
-  "version": "0.1.0",
+  "name": "gemish",
+  "version": "1.0.0",
+  "description": "Gemish AI Powered Chatbot",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
