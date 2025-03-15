@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ArrowRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useChats } from "@/hooks/use-chats";
@@ -85,12 +85,22 @@ export function NavChats() {
                     isActive(`/chat/${chat.id}`) && "bg-black/50"
                   )}
                 >
-                  <Link href={`/chat/${chat.id}`}>
+                  <Link className="font-medium" href={`/chat/${chat.id}`}>
                     <span>{chat.title || "Untitled conversation"}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+
+            <SidebarMenuItem>
+              <Link
+                className="font-medium flex items-center gap-2 hover:underline px-2 py-1"
+                href="/recents"
+              >
+                <span>Show All</span>
+                <ArrowRight className="size-3" />
+              </Link>
+            </SidebarMenuItem>
           </SidebarMenu>
         )}
       </SidebarGroupContent>

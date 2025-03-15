@@ -40,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="flex flex-col gap-3">
+      <SidebarHeader className="flex flex-col gap-3 mt-1">
         <nav className="flex flex-row justify-between items-center px-2">
           <h1 className="text-lg font-semibold">Gemish</h1>
           <SidebarTrigger />

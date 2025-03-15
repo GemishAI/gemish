@@ -12,8 +12,11 @@ import {
   ArrowUpIcon,
   Loader2Icon,
   Square,
+  X,
+  FileText,
 } from "lucide-react";
 import { type DebouncedState } from "use-debounce";
+import { ChatInputFiles } from "./chat-input-files";
 
 interface ChatInputProps {
   input: string;
@@ -22,6 +25,10 @@ interface ChatInputProps {
   handleSend: DebouncedState<() => Promise<void>>;
   handleKeyDown: (e: React.KeyboardEvent) => void;
   stop: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  fileList: File[];
+  removeFile: (file: File) => void;
 }
 
 export function ChatInput({
@@ -31,6 +38,10 @@ export function ChatInput({
   handleSend,
   handleKeyDown,
   stop,
+  fileInputRef,
+  handleFileChange,
+  fileList,
+  removeFile,
 }: ChatInputProps) {
   return (
     <PromptInput
@@ -39,6 +50,9 @@ export function ChatInput({
       onValueChange={handleValueChange}
       onSubmit={handleSend}
     >
+      {fileList.length > 0 && (
+        <ChatInputFiles fileList={fileList} removeFile={removeFile} />
+      )}
       <PromptInputTextarea
         placeholder="Ask anything..."
         className="min-h-[55px]"
@@ -52,7 +66,16 @@ export function ChatInput({
               size="sm"
               variant={"outline"}
               className="h-9 w-9 rounded-full"
+              onClick={() => fileInputRef.current?.click()}
             >
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept="image/*,.pdf"
+                multiple
+                ref={fileInputRef}
+              />
               <Paperclip className="text-primary size-5" />
             </Button>
           </PromptInputAction>
@@ -82,8 +105,8 @@ export function ChatInput({
               status === "submitted"
                 ? "Submitting..."
                 : status === "streaming"
-                ? "Stop generating"
-                : "Send message"
+                  ? "Stop generating"
+                  : "Send message"
             }
           >
             {status === "submitted" ? (

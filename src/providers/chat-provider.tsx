@@ -32,12 +32,17 @@ interface ChatContextType {
   messages: Message[];
   input: string;
   setInput: React.Dispatch<React.SetStateAction<string>>;
-  handleSubmit: () => Promise<void>;
+  handleSubmit: (event: React.FormEvent) => Promise<void>;
   status: "submitted" | "streaming" | "ready" | "error";
   stop: () => void;
   reload: () => void;
   isChatLoading: boolean;
   error: Error | undefined;
+
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileList: File[];
+  removeFile: (file: File) => void;
+  handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -47,6 +52,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   // State management
   const model = "fast";
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fileList = files ? Array.from(files) : [];
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [pendingMessages, setPendingMessages] = useState<
@@ -186,38 +195,48 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   );
 
   // Optimized submit handler with proper dependency tracking
-  const handleSubmit = useCallback(async () => {
-    if (!activeChat || !input.trim()) return;
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent) => {
+      if (!activeChat || !input.trim()) return;
 
-    const userMessage: Message = {
-      id: generateId(),
-      role: "user",
-      content: input,
-      createdAt: new Date(),
-    };
-
-    // Update state to show the message immediately
-    setPendingMessages((prev) => ({
-      ...prev,
-      [activeChat]: userMessage,
-    }));
-
-    setChats((prev) => {
-      const currentMessages = prev[activeChat] || [];
-      return {
-        ...prev,
-        [activeChat]: [...currentMessages, userMessage],
+      const userMessage: Message = {
+        id: generateId(),
+        role: "user",
+        content: input,
+        createdAt: new Date(),
       };
-    });
 
-    // Set flag to trigger AI response
-    needsAiResponse.current = true;
+      // Update state to show the message immediately
+      setPendingMessages((prev) => ({
+        ...prev,
+        [activeChat]: userMessage,
+      }));
 
-    // Use a microtask instead of setTimeout for more reliable execution
-    queueMicrotask(() => {
-      aiHandleSubmit();
-    });
-  }, [activeChat, input, setInput, aiHandleSubmit]);
+      setChats((prev) => {
+        const currentMessages = prev[activeChat] || [];
+        return {
+          ...prev,
+          [activeChat]: [...currentMessages, userMessage],
+        };
+      });
+
+      // Set flag to trigger AI response
+      needsAiResponse.current = true;
+
+      // Use a microtask instead of setTimeout for more reliable execution
+      queueMicrotask(() => {
+        aiHandleSubmit(event, {
+          experimental_attachments: files,
+        });
+      });
+
+      setFiles(undefined);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [activeChat, input, setInput, aiHandleSubmit]
+  );
 
   // Effect to trigger AI response when necessary
   useEffect(() => {
@@ -305,6 +324,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [activeChat, chats, setMessages]
   );
 
+  const removeFile = useCallback(
+    (fileToRemove: File) => {
+      if (files) {
+        const dt = new DataTransfer();
+        Array.from(files).forEach((file) => {
+          if (file !== fileToRemove) {
+            dt.items.add(file);
+          }
+        });
+        setFiles(dt.files);
+        if (fileInputRef.current) {
+          fileInputRef.current.files = dt.files;
+        }
+      }
+    },
+    [files]
+  );
+
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files) {
+        const newFiles = Array.from(event.target.files);
+        const dt = new DataTransfer();
+
+        // Add existing files
+        if (files) {
+          Array.from(files).forEach((file) => dt.items.add(file));
+        }
+
+        // Add new files
+        newFiles.forEach((file) => dt.items.add(file));
+
+        setFiles(dt.files);
+      }
+    },
+    [files]
+  );
+
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useCallback(
     () => ({
@@ -322,6 +379,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       reload,
       isChatLoading,
       error,
+      fileInputRef,
+      fileList,
+      removeFile,
+      handleFileChange,
     }),
     [
       chats,
@@ -338,6 +399,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       reload,
       isChatLoading,
       error,
+      fileInputRef,
+      fileList,
+      removeFile,
+      handleFileChange,
     ]
   );
 

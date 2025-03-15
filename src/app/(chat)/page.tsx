@@ -44,7 +44,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col gap-10 py-24 max-w-[750px] mx-auto w-full">
+    <div className="flex flex-col gap-10 py-24 max-w-[725px] mx-auto w-full">
       <div>
         <StartChat />
       </div>

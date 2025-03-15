@@ -36,6 +36,10 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     isChatLoading,
     error,
     reload,
+    fileInputRef,
+    handleFileChange,
+    fileList,
+    removeFile,
   } = useChat();
 
   useEffect(() => {
@@ -50,16 +54,19 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     [setInput]
   );
 
-  const safeSendMessage = useCallback(() => {
-    if (submittedRef.current || !input.trim()) return;
-    submittedRef.current = true;
-    handleSubmit();
-  }, [input, handleSubmit]);
+  const safeSendMessage = useCallback(
+    (event: React.FormEvent) => {
+      if (submittedRef.current || !input.trim()) return;
+      submittedRef.current = true;
+      handleSubmit(event);
+    },
+    [input, handleSubmit]
+  );
 
   const handleSend = useDebouncedCallback(
-    (e?: React.FormEvent<HTMLFormElement>) => {
+    (e: React.FormEvent) => {
       if (e) e.preventDefault();
-      safeSendMessage();
+      safeSendMessage(e);
     },
     300,
     { leading: true, trailing: false }
@@ -69,7 +76,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        safeSendMessage();
+        safeSendMessage(e);
       }
     },
     [safeSendMessage]
@@ -133,6 +140,10 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
             handleSend={handleSend}
             status={status}
             stop={stop}
+            fileInputRef={fileInputRef}
+            handleFileChange={handleFileChange}
+            fileList={fileList}
+            removeFile={removeFile}
           />
         </div>
       </div>

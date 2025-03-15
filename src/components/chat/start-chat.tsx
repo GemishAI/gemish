@@ -17,7 +17,16 @@ export function StartChat() {
   const [status, setStatus] = useState<"submitted" | "ready">("ready");
 
   // Use the centralized chat context
-  const { input, setInput, createChat, stop } = useChat();
+  const {
+    input,
+    setInput,
+    createChat,
+    stop,
+    fileInputRef,
+    handleFileChange,
+    fileList,
+    removeFile,
+  } = useChat();
 
   // Set up time update interval
   useEffect(() => {
@@ -102,6 +111,10 @@ export function StartChat() {
           handleSend={handleSend}
           status={status}
           stop={stop}
+          fileInputRef={fileInputRef}
+          handleFileChange={handleFileChange}
+          fileList={fileList}
+          removeFile={removeFile}
         />
       </div>
     </div>
