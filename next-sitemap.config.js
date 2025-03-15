@@ -1,7 +1,5 @@
-import { siteConfig } from "./src/config/site";
-
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-  siteUrl: siteConfig.url,
+  siteUrl: "https://gemish.vercel.app",
   generateRobotsTxt: true, // (optional)
 };
