@@ -18,6 +18,15 @@ import { createIdGenerator } from "ai";
 import { useSWRConfig } from "swr";
 import { useRouter } from "next/navigation";
 
+interface FileUploadStatus {
+  id: string;
+  file: File;
+  progress: number;
+  status: "pending" | "uploading" | "success" | "error";
+  url?: string;
+  error?: string;
+}
+
 interface ChatContextType {
   // Chat state
   chats: Record<string, Message[]>;
@@ -39,10 +48,15 @@ interface ChatContextType {
   isChatLoading: boolean;
   error: Error | undefined;
 
+  fileUploads: FileUploadStatus[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   fileList: File[];
   removeFile: (file: File) => void;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  isUploading: boolean;
+
+  fileUrls: string[];
+  clearFileUrls: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -51,11 +65,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { mutate } = useSWRConfig();
   const router = useRouter();
   // State management
-  const model = "fast";
-  const [files, setFiles] = useState<FileList | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const model = "normal";
 
-  const fileList = files ? Array.from(files) : [];
+  const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [files, setFiles] = useState<FileList>();
+  const [fileList, setFileList] = useState<File[]>([]);
+  const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [pendingMessages, setPendingMessages] = useState<
@@ -88,7 +106,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     id: activeChat || undefined,
     initialMessages: initialMessages(),
     experimental_throttle: 50,
-    sendExtraMessageFields: true,
     generateId: createIdGenerator({
       prefix: "msgc",
       separator: "_",
@@ -158,6 +175,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }));
 
       try {
+        // Get all successfully uploaded file URLs
+        const attachments = fileUrls.length > 0 ? { fileUrls } : undefined;
         // Create the chat on the server with the initial message
         const response = await fetch("/api/chats", {
           method: "POST",
@@ -165,6 +184,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({
             id: chatId,
             message: initialMessage,
+            attachments,
           }),
         });
 
@@ -179,6 +199,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         mutate(
           (key) => typeof key === "string" && key.startsWith("/api/chats")
         );
+
+        // Clear files and URLs after successful submission
+        setFileList([]);
+        setFileUploads([]);
+        clearFileUrls();
       } catch (error) {
         // Clean up if creation failed
         setChats((prev) => {
@@ -193,6 +218,156 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     300,
     { leading: true, trailing: false }
   );
+
+  const uploadFileToS3 = async (file: File, id: string) => {
+    try {
+      // Update status to uploading
+      setFileUploads((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: "uploading" as const } : item
+        )
+      );
+
+      // Step 1: Get presigned URL from your API
+      const urlResponse = await fetch("/api/generate-presigned-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+        }),
+      });
+
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json();
+        throw new Error(errorData.error || "Failed to generate upload URL");
+      }
+
+      console.log(urlResponse, "chat provider presigned url");
+
+      const { presignedUrl, url: fileUrl } = await urlResponse.json();
+
+      // Step 2: Upload to S3 using XHR for progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        // Set up progress monitoring
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round(
+              (event.loaded / event.total) * 100
+            );
+            setFileUploads((prev) =>
+              prev.map((item) =>
+                item.id === id ? { ...item, progress: percentComplete } : item
+              )
+            );
+          }
+        };
+
+        xhr.onload = function () {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setFileUploads((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, status: "success" as const, url: fileUrl }
+                  : item
+              )
+            );
+
+            // Add URL to the fileUrls array
+            setFileUrls((prev) => [...prev, fileUrl]);
+
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = function () {
+          reject(new Error("Network error occurred during upload"));
+        };
+
+        // Open connection and send the file
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.send(file);
+      });
+    } catch (err: any) {
+      const errorMessage = err.message || "An error occurred during upload";
+      setFileUploads((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? { ...item, status: "error" as const, error: errorMessage }
+            : item
+        )
+      );
+    }
+  };
+
+  // Add function to clear URLs after submission
+  const clearFileUrls = () => {
+    setFileUrls([]);
+  };
+
+  const uploadAllFiles = async (files: FileUploadStatus[]) => {
+    setIsUploading(true);
+
+    try {
+      // Upload all files concurrently
+      await Promise.all(
+        files.map((fileUpload) =>
+          uploadFileToS3(fileUpload.file, fileUpload.id)
+        )
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Convert FileList to array and add to fileList
+    const newFiles = Array.from(files);
+    setFileList((prev) => [...prev, ...newFiles]);
+
+    // Create file upload status objects
+    const newFileUploads = newFiles.map((file) => ({
+      id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      file,
+      progress: 0,
+      status: "pending" as const,
+    }));
+
+    setFileUploads((prev) => [...prev, ...newFileUploads]);
+
+    // Start upload process for all new files
+    uploadAllFiles(newFileUploads);
+
+    // Reset the input
+    if (event.target.value) event.target.value = "";
+  };
+
+  // Add function to remove a URL when its file is removed
+  const removeFile = (file: File) => {
+    // Find the upload status for this file to get its URL
+    const uploadItem = fileUploads.find((item) => item.file === file);
+
+    // Remove the file from fileList
+    setFileList((prev) => prev.filter((f) => f !== file));
+
+    // Remove the upload status
+    setFileUploads((prev) => prev.filter((item) => item.file !== file));
+
+    // Remove the URL if it exists
+    if (uploadItem?.url) {
+      setFileUrls((prev) => prev.filter((url) => url !== uploadItem.url));
+    }
+  };
 
   // Optimized submit handler with proper dependency tracking
   const handleSubmit = useCallback(
@@ -226,7 +401,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Use a microtask instead of setTimeout for more reliable execution
       queueMicrotask(() => {
         aiHandleSubmit(event, {
-          experimental_attachments: files,
+          data: { imageUrls: fileUrls },
         });
       });
 
@@ -324,44 +499,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [activeChat, chats, setMessages]
   );
 
-  const removeFile = useCallback(
-    (fileToRemove: File) => {
-      if (files) {
-        const dt = new DataTransfer();
-        Array.from(files).forEach((file) => {
-          if (file !== fileToRemove) {
-            dt.items.add(file);
-          }
-        });
-        setFiles(dt.files);
-        if (fileInputRef.current) {
-          fileInputRef.current.files = dt.files;
-        }
-      }
-    },
-    [files]
-  );
-
-  const handleFileChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.files) {
-        const newFiles = Array.from(event.target.files);
-        const dt = new DataTransfer();
-
-        // Add existing files
-        if (files) {
-          Array.from(files).forEach((file) => dt.items.add(file));
-        }
-
-        // Add new files
-        newFiles.forEach((file) => dt.items.add(file));
-
-        setFiles(dt.files);
-      }
-    },
-    [files]
-  );
-
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useCallback(
     () => ({
@@ -383,6 +520,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       fileList,
       removeFile,
       handleFileChange,
+      isUploading,
+      fileUploads,
+      fileUrls,
+      clearFileUrls,
     }),
     [
       chats,
@@ -403,6 +544,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       fileList,
       removeFile,
       handleFileChange,
+      isUploading,
+      fileUploads,
+      fileUrls,
+      clearFileUrls,
     ]
   );
 

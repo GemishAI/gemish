@@ -6,55 +6,58 @@ import { env } from "@/env.mjs";
 
 // Initialize S3 client
 const s3Client = new S3Client({
-	region: env.AWS_REGION,
-	endpoint: env.AWS_ENDPOINT_URL,
-	credentials: {
-		accessKeyId: env.AWS_ACCESS_KEY_ID,
-		secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-	},
-	forcePathStyle: false,
+  region: env.AWS_REGION,
+  endpoint: env.AWS_ENDPOINT_URL,
+  credentials: {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  },
+  forcePathStyle: false,
 });
 
 export async function POST(request: NextRequest) {
-	try {
-		const body = await request.json();
-		const { fileName, fileType }: { fileName: string; fileType: string } = body;
+  try {
+    const body = await request.json();
+    const { fileName, fileType }: { fileName: string; fileType: string } = body;
 
-		if (!fileName || !fileType) {
-			return NextResponse.json(
-				{ error: "fileName and fileType are required" },
-				{ status: 400 },
-			);
-		}
+    if (!fileName || !fileType) {
+      return NextResponse.json(
+        { error: "fileName and fileType are required" },
+        { status: 400 }
+      );
+    }
+    console.log(fileName, fileType);
 
-		// Generate a unique file name
-		const fileExtension = fileName.split(".").pop();
-		const uniqueFileName = `${crypto.randomUUID()}.${fileExtension}`;
-		const key = `uploads/${uniqueFileName}`;
+    // Generate a unique file name
+    const fileExtension = fileName.split(".").pop();
+    const uniqueFileName = `${crypto.randomUUID()}.${fileExtension}`;
+    const key = `uploads/${uniqueFileName}`;
 
-		// Create command for S3 put operation
-		const putObjectCommand = new PutObjectCommand({
-			Bucket: env.AWS_S3_BUCKET_NAME,
-			Key: key,
-			ContentType: fileType,
-		});
+    // Create command for S3 put operation
+    const putObjectCommand = new PutObjectCommand({
+      Bucket: env.AWS_S3_BUCKET_NAME,
+      Key: key,
+      ContentType: fileType,
+    });
 
-		// Generate presigned URL
-		const presignedUrl = await getSignedUrl(s3Client, putObjectCommand, {
-			expiresIn: 3600, // URL expires in 1 hour
-		});
+    // Generate presigned URL
+    const presignedUrl = await getSignedUrl(s3Client, putObjectCommand, {
+      expiresIn: 3600, // URL expires in 1 hour
+    });
 
-		return NextResponse.json({
-			success: true,
-			presignedUrl,
-			key,
-			url: `https://${env.AWS_S3_BUCKET_NAME}.s3.${env.AWS_REGION}.amazonaws.com/${key}`,
-		});
-	} catch (error) {
-		console.error("Error generating presigned URL:", error);
-		return NextResponse.json(
-			{ error: "Error generating presigned URL" },
-			{ status: 500 },
-		);
-	}
+    console.log(presignedUrl);
+
+    return NextResponse.json({
+      success: true,
+      presignedUrl,
+      key,
+      url: `https://gemish.fly.storage.tigris.dev/${key}`,
+    });
+  } catch (error) {
+    console.error("Error generating presigned URL:", error);
+    return NextResponse.json(
+      { error: "Error generating presigned URL" },
+      { status: 500 }
+    );
+  }
 }

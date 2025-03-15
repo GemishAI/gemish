@@ -15,6 +15,7 @@ import { ChatInput } from "./chat-input";
 import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
+import Image from "next/image";
 
 interface ChatInterfaceProps {
   id: string;
@@ -116,6 +117,35 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                   ) : (
                     <ChatMarkdown content={message.content} />
                   )}
+                  <div>
+                    {message?.experimental_attachments
+                      ?.filter(
+                        (attachment) =>
+                          attachment?.contentType?.startsWith("image/") ||
+                          attachment?.contentType?.startsWith("application/pdf")
+                      )
+                      .map((attachment, index) =>
+                        attachment.contentType?.startsWith("image/") ? (
+                          <Image
+                            key={`${message.id}-${index}`}
+                            src={attachment.url}
+                            width={500}
+                            height={500}
+                            alt={attachment.name ?? `attachment-${index}`}
+                          />
+                        ) : attachment.contentType?.startsWith(
+                            "application/pdf"
+                          ) ? (
+                          <iframe
+                            key={`${message.id}-${index}`}
+                            src={attachment.url}
+                            width={500}
+                            height={600}
+                            title={attachment.name ?? `attachment-${index}`}
+                          />
+                        ) : null
+                      )}
+                  </div>
                 </MessageComponent>
               ))}
 

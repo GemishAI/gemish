@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { type DebouncedState } from "use-debounce";
 import { ChatInputFiles } from "./chat-input-files";
+import { useChat } from "@/providers/chat-provider";
 
 interface ChatInputProps {
   input: string;
@@ -43,6 +44,7 @@ export function ChatInput({
   fileList,
   removeFile,
 }: ChatInputProps) {
+  const { isUploading } = useChat();
   return (
     <PromptInput
       className="border-input bg-background border shadow-xs"
@@ -122,7 +124,7 @@ export function ChatInput({
                 size="sm"
                 className="h-9 w-9 rounded-full"
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || isUploading}
               >
                 <ArrowUpIcon className="size-5" />
               </Button>
