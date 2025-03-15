@@ -46,6 +46,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { mutate } = useSWRConfig();
   const router = useRouter();
   // State management
+  const model = "fast";
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [pendingMessages, setPendingMessages] = useState<
@@ -92,11 +93,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         // Otherwise, send the last message in the conversation
         if (messages.length > 0) {
-          return { message: messages[messages.length - 1], id };
+          return { message: messages[messages.length - 1], id, model };
         }
 
         // Fallback for empty conversations
-        return { messages, id, model: "fast" };
+        return { messages, id, model };
       },
       [pendingMessages]
     ),

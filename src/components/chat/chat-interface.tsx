@@ -13,7 +13,6 @@ import { ScrollButton } from "../prompt-kit/scroll-button";
 import { ChatMarkdown } from "./chat-markdown";
 import { ChatInput } from "./chat-input";
 import { LoaderSpinner } from "../loader-spinner";
-import { Button } from "../ui/button";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
 
@@ -77,51 +76,55 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
   );
 
   return (
-    <div className="w-full h-screen relative">
+    <div className="w-full h-screen flex flex-col">
       {isChatLoading ? (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center">
           <LoaderSpinner width="20" height="20" />
         </div>
       ) : (
         <>
-          <ChatContainer
-            ref={containerRef}
-            className="w-full px-4 pt-4 pb-24 space-y-6"
-          >
-            {messages.map((message) => (
-              <MessageComponent
-                key={message.id}
-                className={
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }
-              >
-                {message.role === "assistant" && (
-                  <MessageAvatar
-                    src="/avatars/gemini.png"
-                    alt="AI"
-                    fallback="AI"
-                  />
-                )}
-                {message.role === "user" ? (
-                  <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
-                    {message.content}
-                  </MessageContent>
-                ) : (
-                  <ChatMarkdown content={message.content} />
-                )}
-              </MessageComponent>
-            ))}
+          <div className="flex-1 overflow-y-auto relative">
+            <ChatContainer
+              ref={containerRef}
+              className="w-full px-4 pt-4 pb-4 space-y-6"
+            >
+              {messages.map((message) => (
+                <MessageComponent
+                  key={message.id}
+                  className={
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }
+                >
+                  {message.role === "assistant" && (
+                    <MessageAvatar
+                      src="/avatars/gemini.png"
+                      alt="AI"
+                      fallback="AI"
+                    />
+                  )}
+                  {message.role === "user" ? (
+                    <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
+                      {message.content}
+                    </MessageContent>
+                  ) : (
+                    <ChatMarkdown content={message.content} />
+                  )}
+                </MessageComponent>
+              ))}
 
-            <AIErrorMessage error={error} reload={reload} />
+              <AIErrorMessage error={error} reload={reload} />
 
-            <AILoading status={status} messages={messages} />
-          </ChatContainer>
-          <div className="absolute bottom-4 right-4">
-            <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
+              <AILoading status={status} messages={messages} />
+
+              <div ref={bottomRef} />
+            </ChatContainer>
+            <div className="absolute bottom-4 right-4">
+              <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
+            </div>
           </div>
         </>
       )}
-      <div className="absolute bottom-0 inset-x-0 pb-6 bg-background">
+      <div className="w-full pb-6 bg-background border-t">
         <div className="max-w-3xl w-full mx-auto px-4">
           <ChatInput
             input={input}
