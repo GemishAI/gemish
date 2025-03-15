@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { cookies } from "next/headers";
+import { ClosedNav } from "./closed-nav";
 
 export async function SidebarProviderWrapper({
   children,
@@ -12,6 +13,7 @@ export async function SidebarProviderWrapper({
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
+      <ClosedNav />
       <AppSidebar />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
