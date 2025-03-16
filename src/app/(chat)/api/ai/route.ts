@@ -41,6 +41,7 @@ export async function POST(req: Request) {
   try {
     // Validate the chat belongs to this user
     const isValidChat = await validateChatOwnership(id, session.user.id);
+
     if (!isValidChat) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }

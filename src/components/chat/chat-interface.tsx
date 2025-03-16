@@ -126,7 +126,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                       )
                       .map((attachment, index) =>
                         attachment.contentType?.startsWith("image/") ? (
-                          <Image
+                          <img
                             key={`${message.id}-${index}`}
                             src={attachment.url}
                             width={500}

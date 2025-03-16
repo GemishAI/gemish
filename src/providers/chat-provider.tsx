@@ -68,7 +68,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { mutate } = useSWRConfig();
   const router = useRouter();
   // State management
-  const model = "normal";
+  const model = "search";
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [fileList, setFileList] = useState<File[]>([]);
@@ -373,6 +373,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   // Optimized submit handler with proper dependency tracking
+  // In chat-provider.tsx, update the handleSubmit function:
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
       if (!activeChat || !input.trim()) return;
@@ -382,7 +383,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         role: "user",
         content: input,
         createdAt: new Date(),
+        // Add attachments to the user message if needed
+        experimental_attachments:
+          attachments.length > 0 ? [...attachments] : undefined,
       };
+
+      // Store current attachments for the AI response
+      const currentAttachments = [...attachments];
 
       // Update state to show the message immediately
       setPendingMessages((prev) => ({
@@ -404,8 +411,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Use a microtask instead of setTimeout for more reliable execution
       queueMicrotask(() => {
         aiHandleSubmit(event, {
-          experimental_attachments: attachments,
+          experimental_attachments:
+            currentAttachments.length > 0 ? currentAttachments : undefined,
         });
+        // Only clear attachments after sending
         setAttachments([]);
       });
 
@@ -416,16 +425,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         fileInputRef.current.value = "";
       }
     },
-    [activeChat, input, setInput, aiHandleSubmit]
+    [activeChat, input, setInput, aiHandleSubmit, attachments]
   );
-
   // Effect to trigger AI response when necessary
   useEffect(() => {
     if (activeChat && needsAiResponse.current && status === "ready") {
+      const currentAttachments = [...attachments];
+
       const timer = setTimeout(() => {
         aiHandleSubmit(event, {
           experimental_attachments:
-            attachments.length > 0 ? attachments : undefined,
+            currentAttachments.length > 0 ? currentAttachments : undefined,
         });
 
         // Once we've sent the attachments to the AI, we can clear them
