@@ -27,6 +27,12 @@ interface FileUploadStatus {
   error?: string;
 }
 
+interface Attachment {
+  name: string;
+  contentType: string;
+  url: string;
+}
+
 interface ChatContextType {
   // Chat state
   chats: Record<string, Message[]>;
@@ -54,9 +60,6 @@ interface ChatContextType {
   removeFile: (file: File) => void;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
-
-  fileUrls: string[];
-  clearFileUrls: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -67,8 +70,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // State management
   const model = "normal";
 
-  const [fileUrls, setFileUrls] = useState<string[]>([]);
-  const [files, setFiles] = useState<FileList>();
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [fileList, setFileList] = useState<File[]>([]);
   const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -155,6 +157,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     ),
   });
 
+  const clearAttachments = () => {
+    setAttachments([]);
+  };
+
   // Create a new chat with an initial message - debounced to prevent accidental double creation
   const createChat = useDebouncedCallback(
     async (initialMessage: string) => {
@@ -176,7 +182,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       try {
         // Get all successfully uploaded file URLs
-        const attachments = fileUrls.length > 0 ? { fileUrls } : undefined;
         // Create the chat on the server with the initial message
         const response = await fetch("/api/chats", {
           method: "POST",
@@ -184,7 +189,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({
             id: chatId,
             message: initialMessage,
-            attachments,
           }),
         });
 
@@ -200,10 +204,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           (key) => typeof key === "string" && key.startsWith("/api/chats")
         );
 
-        // Clear files and URLs after successful submission
+        // Clear files and attachments after successful submission
         setFileList([]);
         setFileUploads([]);
-        clearFileUrls();
+        clearAttachments();
       } catch (error) {
         // Clean up if creation failed
         setChats((prev) => {
@@ -277,8 +281,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               )
             );
 
-            // Add URL to the fileUrls array
-            setFileUrls((prev) => [...prev, fileUrl]);
+            // Add to attachments array instead of fileUrls
+            setAttachments((prev) => [
+              ...prev,
+              {
+                name: file.name,
+                contentType: file.type,
+                url: fileUrl,
+              },
+            ]);
 
             resolve();
           } else {
@@ -305,11 +316,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         )
       );
     }
-  };
-
-  // Add function to clear URLs after submission
-  const clearFileUrls = () => {
-    setFileUrls([]);
   };
 
   const uploadAllFiles = async (files: FileUploadStatus[]) => {
@@ -363,9 +369,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // Remove the upload status
     setFileUploads((prev) => prev.filter((item) => item.file !== file));
 
-    // Remove the URL if it exists
+    // Remove from attachments array if URL exists
     if (uploadItem?.url) {
-      setFileUrls((prev) => prev.filter((url) => url !== uploadItem.url));
+      setAttachments((prev) =>
+        prev.filter((attachment) => attachment.url !== uploadItem.url)
+      );
     }
   };
 
@@ -401,11 +409,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Use a microtask instead of setTimeout for more reliable execution
       queueMicrotask(() => {
         aiHandleSubmit(event, {
-          data: { imageUrls: fileUrls },
+          experimental_attachments: attachments,
         });
       });
 
-      setFiles(undefined);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -417,12 +424,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (activeChat && needsAiResponse.current && status === "ready") {
       const timer = setTimeout(() => {
-        aiHandleSubmit();
+        aiHandleSubmit(event, {
+          experimental_attachments:
+            attachments.length > 0 ? attachments : undefined,
+        });
       }, 200);
 
       return () => clearTimeout(timer);
     }
-  }, [activeChat, status, aiHandleSubmit]);
+  }, [activeChat, status, aiHandleSubmit, attachments]);
 
   // Memoized function to set active chat and load messages if needed
   const setActiveChatWithLoad = useCallback(
@@ -522,8 +532,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       handleFileChange,
       isUploading,
       fileUploads,
-      fileUrls,
-      clearFileUrls,
     }),
     [
       chats,
@@ -546,8 +554,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       handleFileChange,
       isUploading,
       fileUploads,
-      fileUrls,
-      clearFileUrls,
     ]
   );
 
