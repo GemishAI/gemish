@@ -157,10 +157,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     ),
   });
 
-  const clearAttachments = () => {
-    setAttachments([]);
-  };
-
   // Create a new chat with an initial message - debounced to prevent accidental double creation
   const createChat = useDebouncedCallback(
     async (initialMessage: string) => {
@@ -207,7 +203,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Clear files and attachments after successful submission
         setFileList([]);
         setFileUploads([]);
-        clearAttachments();
       } catch (error) {
         // Clean up if creation failed
         setChats((prev) => {
@@ -411,8 +406,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         aiHandleSubmit(event, {
           experimental_attachments: attachments,
         });
+        setAttachments([]);
       });
 
+      // Only clear file UI references
+      setFileList([]);
+      setFileUploads([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -428,6 +427,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           experimental_attachments:
             attachments.length > 0 ? attachments : undefined,
         });
+
+        // Once we've sent the attachments to the AI, we can clear them
+        setAttachments([]);
+
+        // Reset the flag to prevent multiple triggers
+        needsAiResponse.current = false;
       }, 200);
 
       return () => clearTimeout(timer);
