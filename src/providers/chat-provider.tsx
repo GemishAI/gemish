@@ -9,6 +9,7 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useTransition,
 } from "react";
 import { type Message } from "ai";
 import { useChat as useAIChat } from "@ai-sdk/react";
@@ -81,7 +82,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [pendingMessages, setPendingMessages] = useState<
     Record<string, Message>
   >({});
-  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatLoading, startTransition] = useTransition();
 
   // Ref for tracking if AI response is needed (prevents unneeded re-renders)
   const needsAiResponse = useRef(false);
@@ -476,9 +477,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Fetch chat messages from server
-      const fetchChatMessages = async () => {
-        setIsChatLoading(true);
+      // Fetch chat messages from server using startTransition
+      startTransition(async () => {
         try {
           const response = await fetch(`/api/chats/${chatId}/messages`);
           const data = await response.json();
@@ -510,16 +510,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error("Failed to load chat:", error);
-          setIsChatLoading(false);
           if (activeChat === chatId) {
             setMessages([]);
           }
-        } finally {
-          setIsChatLoading(false);
         }
-      };
-
-      fetchChatMessages();
+      });
     },
     [activeChat, chats, setMessages]
   );

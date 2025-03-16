@@ -15,7 +15,6 @@ import { ChatInput } from "./chat-input";
 import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
-import Image from "next/image";
 
 interface ChatInterfaceProps {
   id: string;
