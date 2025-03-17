@@ -15,6 +15,7 @@ import { ChatInput } from "./chat-input";
 import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
+import { MessageAttachments } from "./messages/message-attachments";
 
 interface ChatInterfaceProps {
   id: string;
@@ -109,42 +110,23 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                       fallback="AI"
                     />
                   )}
+
                   {message.role === "user" ? (
-                    <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
-                      {message.content}
-                    </MessageContent>
+                    <div className="flex flex-col items-end">
+                      {message.experimental_attachments && (
+                        <MessageAttachments
+                          key={message.id}
+                          messageId={message.id}
+                          attachments={message.experimental_attachments}
+                        />
+                      )}
+                      <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
+                        {message.content}
+                      </MessageContent>
+                    </div>
                   ) : (
                     <ChatMarkdown content={message.content} />
                   )}
-                  <div>
-                    {message?.experimental_attachments
-                      ?.filter(
-                        (attachment) =>
-                          attachment?.contentType?.startsWith("image/") ||
-                          attachment?.contentType?.startsWith("application/pdf")
-                      )
-                      .map((attachment, index) =>
-                        attachment.contentType?.startsWith("image/") ? (
-                          <img
-                            key={`${message.id}-${index}`}
-                            src={attachment.url}
-                            width={500}
-                            height={500}
-                            alt={attachment.name ?? `attachment-${index}`}
-                          />
-                        ) : attachment.contentType?.startsWith(
-                            "application/pdf"
-                          ) ? (
-                          <iframe
-                            key={`${message.id}-${index}`}
-                            src={attachment.url}
-                            width={500}
-                            height={600}
-                            title={attachment.name ?? `attachment-${index}`}
-                          />
-                        ) : null
-                      )}
-                  </div>
                 </MessageComponent>
               ))}
 
