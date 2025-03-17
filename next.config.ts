@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "gemish.fly.storage.tigris.dev",
         port: "",
-        pathname: "/uploads/**",
+        pathname: "/**",
         search: "",
       },
     ],

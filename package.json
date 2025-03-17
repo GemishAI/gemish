@@ -21,6 +21,7 @@
     "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@better-fetch/fetch": "^1.1.15",
     "@daveyplate/better-auth-ui": "^1.2.27",
+    "@million/lint": "^1.0.14",
     "@neondatabase/serverless": "^0.10.4",
     "@phosphor-icons/react": "^2.1.7",
     "@polar-sh/better-auth": "^0.0.7",

@@ -22,7 +22,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ id }: ChatInterfaceProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const submittedRef = useRef(false);
 
@@ -84,66 +84,60 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
   );
 
   return (
-    <div className="w-full h-screen flex flex-col">
+    <div className="w-full h-screen relative flex flex-col">
       {isChatLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <LoaderSpinner width="20" height="20" />
         </div>
       ) : (
-        <>
-          <div className="flex-1 overflow-y-auto relative">
-            <ChatContainer
-              ref={containerRef}
-              className="w-full px-4 pt-4 pb-4 space-y-6"
-            >
-              {messages.map((message) => (
-                <MessageComponent
-                  key={message.id}
-                  className={
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }
-                >
-                  {message.role === "assistant" && (
-                    <MessageAvatar
-                      src="/avatars/gemini.png"
-                      alt="AI"
-                      fallback="AI"
-                    />
-                  )}
+        <div className="flex h-screen w-full flex-col overflow-auto">
+          <ChatContainer
+            ref={chatContainerRef}
+            autoScroll={true}
+            className=" p-4 flex-1  space-y-6"
+          >
+            {messages.map((message) => (
+              <MessageComponent
+                key={message.id}
+                className={
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }
+              >
+                {message.role === "assistant" && (
+                  <MessageAvatar
+                    src="/avatars/gemini.png"
+                    alt="AI"
+                    fallback="AI"
+                  />
+                )}
 
-                  {message.role === "user" ? (
-                    <div className="flex flex-col items-end w-full">
-                      {message.experimental_attachments && (
-                        <MessageAttachments
-                          key={message.id}
-                          messageId={message.id}
-                          attachments={message.experimental_attachments}
-                        />
-                      )}
-                      <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
-                        {message.content}
-                      </MessageContent>
-                    </div>
-                  ) : (
-                    <ChatMarkdown content={message.content} />
-                  )}
-                </MessageComponent>
-              ))}
+                {message.role === "user" ? (
+                  <div className="flex flex-col items-end w-full">
+                    {message.experimental_attachments && (
+                      <MessageAttachments
+                        key={message.id}
+                        messageId={message.id}
+                        attachments={message.experimental_attachments}
+                      />
+                    )}
+                    <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
+                      {message.content}
+                    </MessageContent>
+                  </div>
+                ) : (
+                  <ChatMarkdown content={message.content} />
+                )}
+              </MessageComponent>
+            ))}
 
-              <AIErrorMessage error={error} reload={reload} />
+            <AIErrorMessage error={error} reload={reload} />
 
-              <AILoading status={status} messages={messages} />
-
-              <div ref={bottomRef} />
-            </ChatContainer>
-            <div className="absolute bottom-4 right-4">
-              <ScrollButton containerRef={containerRef} scrollRef={bottomRef} />
-            </div>
-          </div>
-        </>
+            <AILoading status={status} messages={messages} />
+          </ChatContainer>
+        </div>
       )}
-      <div className="w-full pb-6 bg-background border-t">
-        <div className="max-w-3xl w-full mx-auto px-4">
+      <div className="w-full pb-6 bg-background sticky bottom-0">
+        <div className=" w-full mx-auto px-4">
           <ChatInput
             input={input}
             handleKeyDown={handleKeyDown}

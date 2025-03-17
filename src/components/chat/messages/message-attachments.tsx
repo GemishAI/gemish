@@ -113,8 +113,9 @@ export function MessageAttachments({
                       <Image
                         src={attachment.url}
                         alt={attachmentName}
-                        fill
-                        className="w-full object-contain"
+                        width={500}
+                        height={500}
+                        className="w-full h-full "
                       />
                     </div>
                   ) : isPDF ? (

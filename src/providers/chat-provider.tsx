@@ -454,31 +454,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [activeChat, status, aiHandleSubmit, attachments]);
 
   // Memoized function to set active chat and load messages if needed
+  // In ChatProvider.tsx, modify the setActiveChatWithLoad function:
+
   const setActiveChatWithLoad = useCallback(
     (chatId: string | null) => {
       if (chatId === activeChat) return;
 
-      // Reset state when changing chats
+      // Reset messages state but DO NOT reset the active chat yet
       setMessages([]);
-      setActiveChat(chatId);
       needsAiResponse.current = false;
 
-      if (!chatId) return;
-
-      // Check if we already have this chat loaded
-      if (chats[chatId]) {
-        setMessages(chats[chatId]);
-
-        // Check if the last message is from the user and needs a response
-        const chatMessages = chats[chatId];
-        if (
-          chatMessages.length > 0 &&
-          chatMessages[chatMessages.length - 1].role === "user"
-        ) {
-          needsAiResponse.current = true;
-        }
+      if (!chatId) {
+        setActiveChat(null);
         return;
       }
+
+      // Check if we already have this chat loaded
+      if (chats[chatId] && chats[chatId].length > 0) {
+        // Set active chat first to ensure proper state consistency
+        setActiveChat(chatId);
+
+        // Then set messages with a slight delay to ensure component is ready
+        setTimeout(() => {
+          setMessages(chats[chatId]);
+
+          // Check if the last message is from the user and needs a response
+          const chatMessages = chats[chatId];
+          if (
+            chatMessages.length > 0 &&
+            chatMessages[chatMessages.length - 1].role === "user"
+          ) {
+            needsAiResponse.current = true;
+          }
+        }, 50);
+        return;
+      }
+
+      // Set active chat before fetching
+      setActiveChat(chatId);
 
       // Fetch chat messages from server using startTransition
       startTransition(async () => {

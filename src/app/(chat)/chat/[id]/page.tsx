@@ -11,20 +11,23 @@ export default function ChatPage() {
   const { handleSubmit, pendingMessages } = useChat();
 
   // Auto-trigger AI response for pending messages
+  // In ChatPage.jsx
   useEffect(() => {
     if (id && pendingMessages[id]) {
-      // Automatically trigger the AI response for the pending message
-      // Small delay to ensure the UI is ready
+      // Add a longer delay to ensure the chat interface is fully loaded
       const timer = setTimeout(() => {
-        handleSubmit();
-      }, 100);
+        // Only submit if this is still the active chat
+        if (id === params?.id) {
+          handleSubmit();
+        }
+      }, 300);
 
       return () => clearTimeout(timer);
     }
-  }, [id, pendingMessages, handleSubmit]);
+  }, [id, pendingMessages, handleSubmit, params]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto h-full flex items-center justify-center pt-4">
+    <div className="w-full max-w-3xl  mx-auto h-full flex items-center justify-center pt-4">
       <ChatInterface id={id} />
     </div>
   );
