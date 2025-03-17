@@ -19,6 +19,9 @@ import { createIdGenerator } from "ai";
 import { useSWRConfig } from "swr";
 import { useRouter } from "next/navigation";
 
+// Define the possible model states
+type ModelState = "normal" | "search" | "think";
+
 interface FileUploadStatus {
   id: string;
   file: File;
@@ -39,6 +42,14 @@ interface ChatContextType {
   chats: Record<string, Message[]>;
   activeChat: string | null;
   pendingMessages: Record<string, Message>;
+
+  // Model state
+  model: ModelState;
+  setModel: (model: ModelState) => void;
+  isSearchActive: boolean;
+  isThinkActive: boolean;
+  toggleSearch: () => void;
+  toggleThink: () => void;
 
   // Chat actions
   createChat: DebouncedState<(initialMessage: string) => Promise<void>>;
@@ -68,9 +79,22 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { mutate } = useSWRConfig();
   const router = useRouter();
-  // State management
-  const model = "search";
 
+  // Model state management
+  const [model, setModelState] = useState<ModelState>("normal");
+  const isSearchActive = model === "search";
+  const isThinkActive = model === "think";
+
+  // Toggle functions for model states
+  const toggleSearch = useCallback(() => {
+    setModelState((prev) => (prev === "search" ? "normal" : "search"));
+  }, []);
+
+  const toggleThink = useCallback(() => {
+    setModelState((prev) => (prev === "think" ? "normal" : "think"));
+  }, []);
+
+  // State management
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [fileList, setFileList] = useState<File[]>([]);
   const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
@@ -120,7 +144,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
         if (id && pendingMessages[id]) {
-          return { message: pendingMessages[id], id };
+          return { message: pendingMessages[id], id, model };
         }
 
         // Otherwise, send the last message in the conversation
@@ -131,7 +155,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Fallback for empty conversations
         return { messages, id, model };
       },
-      [pendingMessages]
+      [pendingMessages, model]
     ),
     onFinish: useCallback(
       (message: Message) => {
@@ -189,6 +213,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({
             id: chatId,
             message: initialMessage,
+            model, // Include the current model state
           }),
         });
 
@@ -558,6 +583,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       handleFileChange,
       isUploading,
       fileUploads,
+      // Added model-related properties
+      model,
+      setModel: setModelState,
+      isSearchActive,
+      isThinkActive,
+      toggleSearch,
+      toggleThink,
     }),
     [
       chats,
@@ -580,6 +612,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       handleFileChange,
       isUploading,
       fileUploads,
+      // Added model-related dependencies
+      model,
+      setModelState,
+      isSearchActive,
+      isThinkActive,
+      toggleSearch,
+      toggleThink,
     ]
   );
 

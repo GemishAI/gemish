@@ -65,10 +65,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model: messagesHaveAttachments
         ? gemish.languageModel("normal")
-        : wrapLanguageModel({
-            model: gemish.languageModel(model),
-            middleware: cacheMiddleware,
-          }),
+        : gemish.languageModel(model),
       messages,
       system:
         "You are a helpful assistant. Respond to the user in Markdown format.",
@@ -95,7 +92,10 @@ export async function POST(req: Request) {
     // consume the stream to ensure it runs to completion & triggers onFinish
     // even when the client response is aborted:
     result.consumeStream(); // no await
-    return result.toDataStreamResponse();
+    return result.toDataStreamResponse({
+      sendReasoning: true,
+      sendSources: true,
+    });
   } catch (error) {
     console.error("Error in AI API route:", error);
     return NextResponse.json(

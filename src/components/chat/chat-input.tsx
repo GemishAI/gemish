@@ -16,6 +16,7 @@ import {
 import { type DebouncedState } from "use-debounce";
 import { ChatInputFiles } from "./chat-input-files";
 import { useChat } from "@/providers/chat-provider";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   input: string;
@@ -42,7 +43,27 @@ export function ChatInput({
   fileList,
   removeFile,
 }: ChatInputProps) {
-  const { isUploading } = useChat();
+  const {
+    isUploading,
+    isSearchActive,
+    isThinkActive,
+    toggleSearch,
+    toggleThink,
+    model,
+  } = useChat();
+
+  // Define the gradient styles for the active buttons
+  const searchButtonGradient = isSearchActive
+    ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700"
+    : "bg-transparent";
+
+  const thinkButtonGradient = isThinkActive
+    ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700"
+    : "bg-transparent";
+
+  // Determine if input should be disabled
+  const isInputDisabled = status !== "ready";
+
   return (
     <PromptInput
       className="border-input bg-background border shadow-xs"
@@ -54,10 +75,12 @@ export function ChatInput({
         <ChatInputFiles fileList={fileList} removeFile={removeFile} />
       )}
       <PromptInputTextarea
-        placeholder="Ask anything..."
+        placeholder={
+          isSearchActive ? "Search mode active..." : "Ask anything..."
+        }
         className="min-h-[55px]"
         onKeyDown={handleKeyDown}
-        disabled={status !== "ready"}
+        disabled={isInputDisabled}
       />
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
         <div className="flex items-center gap-2">
@@ -67,6 +90,7 @@ export function ChatInput({
               variant={"outline"}
               className="h-9 w-9 rounded-full"
               onClick={() => fileInputRef.current?.click()}
+              disabled={isSearchActive}
             >
               <input
                 type="file"
@@ -82,20 +106,32 @@ export function ChatInput({
 
           <Button
             size="sm"
-            variant={"outline"}
-            className="h-9 w-fit rounded-full "
+            variant={isSearchActive ? "default" : "outline"}
+            className={cn("h-9 w-fit rounded-full", searchButtonGradient)}
+            onClick={toggleSearch}
           >
-            <Globe className="text-primary size-5" />
-            Search
+            <Globe
+              className={cn(
+                "size-5",
+                isSearchActive ? "text-white" : "text-primary"
+              )}
+            />
+            <span className="ml-1">Search</span>
           </Button>
 
           <Button
             size="sm"
-            variant={"outline"}
-            className="h-9 w-fit rounded-full"
+            variant={isThinkActive ? "default" : "outline"}
+            className={cn("h-9 w-fit rounded-full", thinkButtonGradient)}
+            onClick={toggleThink}
           >
-            <Brain className="text-primary size-5" />
-            Think
+            <Brain
+              className={cn(
+                "size-5",
+                isThinkActive ? "text-white" : "text-primary"
+              )}
+            />
+            <span className="ml-1">Think</span>
           </Button>
         </div>
 

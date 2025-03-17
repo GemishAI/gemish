@@ -16,6 +16,13 @@ import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
 import { MessageAttachments } from "./messages/message-attachments";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningResponse,
+  ReasoningTrigger,
+} from "@/components/prompt-kit/reasoning";
+import Link from "next/link";
 
 interface ChatInterfaceProps {
   id: string;
@@ -106,15 +113,17 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                 }
               >
                 {message.role === "assistant" && (
-                  <MessageAvatar
-                    src="/avatars/gemini.png"
-                    alt="AI"
-                    fallback="AI"
-                  />
+                  <div className="py-1.5">
+                    <MessageAvatar
+                      src="/avatars/gemini.png"
+                      alt="AI"
+                      fallback="AI"
+                    />
+                  </div>
                 )}
 
                 {message.role === "user" ? (
-                  <div className="flex flex-col items-end w-full">
+                  <div className="flex flex-col items-end w-full gap-1">
                     {message.experimental_attachments && (
                       <MessageAttachments
                         key={message.id}
@@ -123,12 +132,87 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                       />
                     )}
                     <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
-                      {message.content}
+                      {/* Map over message.parts for user messages */}
+                      {message.parts &&
+                        message.parts.map((part, index) => {
+                          if (part.type === "text") {
+                            return <div key={index}>{part.text}</div>;
+                          }
+                          return null;
+                        })}
                     </MessageContent>
                   </div>
                 ) : (
-                  <div className="w-full">
-                    <ChatMarkdown key={message.id} content={message.content} />
+                  <div className="w-full flex flex-col items-start gap-2">
+                    {/* Check if reasoning exists in message.parts */}
+                    {message.parts &&
+                      message.parts.some(
+                        (part) => part.type === "reasoning"
+                      ) && (
+                        <Reasoning>
+                          <div className="flex w-full flex-col gap-3">
+                            <ReasoningTrigger>Show reasoning</ReasoningTrigger>
+                            <ReasoningContent className="ml-2 border-l-2 border-l-slate-200 px-2 pb-1 dark:border-l-slate-700">
+                              <ReasoningResponse
+                                text={message.parts
+                                  .filter((part) => part.type === "reasoning")
+                                  .flatMap((part) =>
+                                    part.details
+                                      .filter(
+                                        (detail) => detail.type === "text"
+                                      )
+                                      .map((detail) => detail.text)
+                                  )
+                                  .join("\n")}
+                              />
+                            </ReasoningContent>
+                          </div>
+                        </Reasoning>
+                      )}
+
+                    {/* Render text parts after reasoning */}
+                    {message.parts &&
+                      message.parts.map((part, index) => {
+                        if (part.type === "text") {
+                          return (
+                            <ChatMarkdown
+                              key={`text-${index}`}
+                              content={part.text}
+                            />
+                          );
+                        }
+                        return null;
+                      })}
+
+                    {message.parts &&
+                      message.parts
+                        .filter((part) => part.type === "source")
+                        .map((part, index) => (
+                          <div
+                            key={`source-${part.source.id}`}
+                            className="flex items-center bg-gray-900 text-gray-200 rounded-md px-3 py-2"
+                          >
+                            <span className="mr-2 text-gray-400">
+                              {index + 1}
+                            </span>
+                            <div className="flex flex-col">
+                              <div className="text-sm font-medium">
+                                {part.source.title ||
+                                  new URL(part.source.url).hostname}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                <Link
+                                  href={part.source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  {part.source.url}
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                   </div>
                 )}
               </MessageComponent>
