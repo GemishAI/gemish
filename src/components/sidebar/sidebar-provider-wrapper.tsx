@@ -13,9 +13,13 @@ export async function SidebarProviderWrapper({
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <ClosedNav />
       <AppSidebar />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <div className="flex flex-1 flex-col  p-4 pt-0">
+          <ClosedNav />
+          {children}
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

@@ -1,6 +1,6 @@
-import { Inter, Urbanist } from "next/font/google";
+import { Inter, Urbanist, Geist } from "next/font/google";
 
-export const inter = Inter({
+export const inter = Geist({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",

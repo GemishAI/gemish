@@ -141,7 +141,9 @@ export function ChatMarkdown({ content }: { content: string }) {
 
   const renderer: Partial<ReactRenderer> = {
     paragraph: (children) => (
-      <p className=" text-neutral-800 dark:text-neutral-200">{children}</p>
+      <p className=" text-neutral-800 py-1.5 dark:text-neutral-200">
+        {children}
+      </p>
     ),
     code: (children, language) => (
       <CodeBlock language={language}>{String(children)}</CodeBlock>

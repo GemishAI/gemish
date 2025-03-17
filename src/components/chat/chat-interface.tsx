@@ -90,17 +90,19 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
           <LoaderSpinner width="20" height="20" />
         </div>
       ) : (
-        <div className="flex h-screen w-full flex-col overflow-auto">
+        <div className="flex h-screen w-full  flex-col overflow-hidden">
           <ChatContainer
             ref={chatContainerRef}
             autoScroll={true}
-            className=" p-4 flex-1  space-y-6"
+            className=" p-4 flex-1   space-y-8"
           >
             {messages.map((message) => (
               <MessageComponent
                 key={message.id}
                 className={
-                  message.role === "user" ? "justify-end" : "justify-start"
+                  message.role === "user"
+                    ? "justify-end"
+                    : "justify-start h-full"
                 }
               >
                 {message.role === "assistant" && (
@@ -125,7 +127,9 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                     </MessageContent>
                   </div>
                 ) : (
-                  <ChatMarkdown content={message.content} />
+                  <div className="w-full">
+                    <ChatMarkdown key={message.id} content={message.content} />
+                  </div>
                 )}
               </MessageComponent>
             ))}

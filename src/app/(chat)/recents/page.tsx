@@ -225,7 +225,7 @@ export default function RecentsPage() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto py-8 min-h-screen">
+    <div className="w-full max-w-3xl mx-auto py-8 h-full">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-semibold">Chats</h1>
         <Button onClick={createNewChat} className="gap-2">

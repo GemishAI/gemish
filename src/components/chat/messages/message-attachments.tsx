@@ -82,19 +82,19 @@ export function MessageAttachments({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center w-24 h-24 p-2">
-                      <FileTextIcon className="h-8 w-8 text-primary/70 mb-1" />
-                      <p
-                        className="text-xs text-center truncate w-full"
-                        title={attachment.name}
-                      >
-                        {attachmentName.length > 10
-                          ? `${attachmentName.slice(0, 8)}...`
-                          : attachment.name}
-                      </p>
-                      <p className="text-xs text-center text-muted-foreground">
-                        PDF
-                      </p>
+                    <div className="flex  items-center w-fit h-fit p-2 gap-2">
+                      <FileTextIcon className="size-6 text-primary/70 " />
+                      <div className="flex flex-col items-start">
+                        <p
+                          className="text-xs w-24 truncate "
+                          title={attachment.name}
+                        >
+                          {attachmentName.length > 10
+                            ? `${attachmentName.slice(0, 8)}...`
+                            : attachment.name}
+                        </p>
+                        <p className="text-xs  text-muted-foreground">PDF</p>
+                      </div>
                     </div>
                   )}
                 </div>

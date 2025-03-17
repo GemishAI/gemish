@@ -85,7 +85,7 @@ export function NavChats() {
                     isActive(`/chat/${chat.id}`) && "bg-black/50"
                   )}
                 >
-                  <Link className="font-medium" href={`/chat/${chat.id}`}>
+                  <Link href={`/chat/${chat.id}`}>
                     <span>{chat.title || "Untitled conversation"}</span>
                   </Link>
                 </SidebarMenuButton>
