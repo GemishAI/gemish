@@ -113,6 +113,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       prefix: "msgc",
       separator: "_",
     }),
+    onError(error) {
+      console.log(error);
+    },
     experimental_prepareRequestBody: useCallback(
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
@@ -200,10 +203,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         mutate(
           (key) => typeof key === "string" && key.startsWith("/api/chats")
         );
-
-        // Clear files and attachments after successful submission
-        setFileList([]);
-        setFileUploads([]);
       } catch (error) {
         // Clean up if creation failed
         setChats((prev) => {
@@ -441,6 +440,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         // Once we've sent the attachments to the AI, we can clear them
         setAttachments([]);
+
+        // Clear files and attachments after successful submission
+        setFileList([]);
+        setFileUploads([]);
 
         // Reset the flag to prevent multiple triggers
         needsAiResponse.current = false;

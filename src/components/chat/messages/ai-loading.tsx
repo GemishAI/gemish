@@ -18,7 +18,7 @@ export function AILoading({ status, messages }: AILoadingProps) {
         messages[messages.length - 1].role === "user" && (
           <MessageComponent className="justify-start">
             <MessageAvatar src="/avatars/gemini.png" alt="AI" fallback="AI" />
-            <Loader text="Thinking..." variant="text-shimmer" size="lg" />
+            <Loader text="Thinking" variant="loading-dots" size="md" />
           </MessageComponent>
         )}
     </>

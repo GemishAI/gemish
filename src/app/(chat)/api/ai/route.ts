@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { appendClientMessage, appendResponseMessages, streamText } from "ai";
-import { google } from "@ai-sdk/google";
 import { saveChat } from "@/server/db/chat-store";
 import {
   loadChatMessages,
@@ -30,6 +29,8 @@ export async function POST(req: Request) {
     );
   }
 
+  console.log(JSON.stringify(message, null, 2), "API");
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -54,11 +55,20 @@ export async function POST(req: Request) {
       message,
     });
 
+    console.log(JSON.stringify(messages, null, 2), "API");
+
+    // check if user has sent a PDF
+    const messagesHaveAttachments = messages.some(
+      (message) => message.experimental_attachments
+    );
+
     const result = streamText({
-      model: wrapLanguageModel({
-        model: gemish.languageModel(model),
-        middleware: cacheMiddleware,
-      }),
+      model: messagesHaveAttachments
+        ? gemish.languageModel("normal")
+        : wrapLanguageModel({
+            model: gemish.languageModel(model),
+            middleware: cacheMiddleware,
+          }),
       messages,
       system:
         "You are a helpful assistant. Respond to the user in Markdown format.",

@@ -12,8 +12,6 @@ import {
   ArrowUpIcon,
   Loader2Icon,
   Square,
-  X,
-  FileText,
 } from "lucide-react";
 import { type DebouncedState } from "use-debounce";
 import { ChatInputFiles } from "./chat-input-files";

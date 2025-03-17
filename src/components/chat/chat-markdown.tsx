@@ -83,18 +83,6 @@ export function ChatMarkdown({ content }: { content: string }) {
 
   const LinkPreview: React.FC<{ href: string }> = ({ href }) => {
     const [metadata, setMetadata] = useState<LinkMetadata | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-      setIsLoading(true);
-      setTimeout(() => setIsLoading(false), 500); // Simulate fetch delay
-    }, [href]);
-
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center p-4 animate-spin h-5 w-5 text-neutral-500 dark:text-neutral-400" />
-      );
-    }
 
     const domain = new URL(href).hostname;
     return (

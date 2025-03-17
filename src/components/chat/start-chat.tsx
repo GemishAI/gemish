@@ -2,7 +2,6 @@
 
 import type React from "react";
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth-client";
 import { useChat } from "@/providers/chat-provider";
@@ -10,7 +9,6 @@ import { useDebouncedCallback } from "use-debounce";
 import { ChatInput } from "./chat-input";
 
 export function StartChat() {
-  const router = useRouter();
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
   const { data: session } = useSession();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
