@@ -112,7 +112,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                   )}
 
                   {message.role === "user" ? (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end w-full">
                       {message.experimental_attachments && (
                         <MessageAttachments
                           key={message.id}
