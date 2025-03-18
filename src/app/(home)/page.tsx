@@ -9,7 +9,7 @@ export default function ChatPage() {
         <div className="min-h-full flex items-center justify-center px-4">
           <div className="max-w-[725px] w-full text-center space-y-6">
             <h1 className="text-5xl font-semibold">
-              Chat Powered by Gemini 2.0
+              Discovering the Power of Gemini Models with Gemish
             </h1>
             <p className="text-lg text-muted-foreground text-balance">
               Powered by Google's latest AI, Gemish brings multimodal chat, deep
