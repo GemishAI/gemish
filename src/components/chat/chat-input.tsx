@@ -12,11 +12,11 @@ import {
   ArrowUpIcon,
   Loader2Icon,
   Square,
+  X,
+  FileText,
 } from "lucide-react";
 import { type DebouncedState } from "use-debounce";
 import { ChatInputFiles } from "./chat-input-files";
-import { useChat } from "@/providers/chat-provider";
-import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   input: string;
@@ -43,27 +43,6 @@ export function ChatInput({
   fileList,
   removeFile,
 }: ChatInputProps) {
-  const {
-    isUploading,
-    isSearchActive,
-    isThinkActive,
-    toggleSearch,
-    toggleThink,
-    model,
-  } = useChat();
-
-  // Define the gradient styles for the active buttons
-  const searchButtonGradient = isSearchActive
-    ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700"
-    : "bg-transparent";
-
-  const thinkButtonGradient = isThinkActive
-    ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700"
-    : "bg-transparent";
-
-  // Determine if input should be disabled
-  const isInputDisabled = status !== "ready";
-
   return (
     <PromptInput
       className="border-input bg-background border shadow-xs"
@@ -75,12 +54,10 @@ export function ChatInput({
         <ChatInputFiles fileList={fileList} removeFile={removeFile} />
       )}
       <PromptInputTextarea
-        placeholder={
-          isSearchActive ? "Search mode active..." : "Ask anything..."
-        }
+        placeholder="Ask anything..."
         className="min-h-[55px]"
         onKeyDown={handleKeyDown}
-        disabled={isInputDisabled}
+        disabled={status !== "ready"}
       />
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
         <div className="flex items-center gap-2">
@@ -90,7 +67,6 @@ export function ChatInput({
               variant={"outline"}
               className="h-9 w-9 rounded-full"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isSearchActive}
             >
               <input
                 type="file"
@@ -106,63 +82,53 @@ export function ChatInput({
 
           <Button
             size="sm"
-            variant={isSearchActive ? "default" : "outline"}
-            className={cn("h-9 w-fit rounded-full", searchButtonGradient)}
-            onClick={toggleSearch}
+            variant={"outline"}
+            className="lg:h-9 h-8 lg:text-sm text-xs w-fit rounded-full "
           >
-            <Globe
-              className={cn(
-                "size-5",
-                isSearchActive ? "text-white" : "text-primary"
-              )}
-            />
-            <span className="ml-1">Search</span>
+            <Globe className="text-primary lg:size-5 size-4" />
+            Search
           </Button>
 
           <Button
             size="sm"
-            variant={isThinkActive ? "default" : "outline"}
-            className={cn("h-9 w-fit rounded-full", thinkButtonGradient)}
-            onClick={toggleThink}
+            variant={"outline"}
+            className="lg:h-9 h-8 lg:text-sm text-xs w-fit rounded-full"
           >
-            <Brain
-              className={cn(
-                "size-5",
-                isThinkActive ? "text-white" : "text-primary"
-              )}
-            />
-            <span className="ml-1">Think</span>
+            <Brain className="text-primary lg:size-5 size-4" />
+            Think
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
           <PromptInputAction
             tooltip={
-              status === "submitted"
-                ? "Submitting..."
-                : status === "streaming"
-                  ? "Stop generating"
-                  : "Send message"
+              status === "submitted" ? "Submitting..."
+              : status === "streaming" ?
+                "Stop generating"
+              : "Send message"
             }
           >
-            {status === "submitted" ? (
-              <Button size="sm" className="h-9 w-9 rounded-full" disabled>
-                <Loader2Icon className="size-5 animate-spin" />
-              </Button>
-            ) : status === "streaming" ? (
-              <Button size="sm" className="h-9 w-9 rounded-full" onClick={stop}>
-                <Square className="size-4 fill-current" />
-              </Button>
-            ) : (
+            {status === "submitted" ?
               <Button
                 size="sm"
-                className="h-9 w-9 rounded-full"
-                onClick={handleSend}
-                disabled={!input.trim() || isUploading}
+                className="lg:h-9 lg:w-9 h-8 w-8 rounded-full"
+                disabled
               >
-                <ArrowUpIcon className="size-5" />
+                <Loader2Icon className="lg:size-5 size-4 animate-spin" />
               </Button>
-            )}
+            : status === "streaming" ?
+              <Button size="sm" className="h-9 w-9 rounded-full" onClick={stop}>
+                <Square className="lg:size-4 size-3 fill-current" />
+              </Button>
+            : <Button
+                size="sm"
+                className="lg:h-9 lg:w-9 h-8 w-8 rounded-full"
+                onClick={handleSend}
+                disabled={!input.trim()}
+              >
+                <ArrowUpIcon className="lg:size-5 size-4" />
+              </Button>
+            }
           </PromptInputAction>
         </div>
       </PromptInputActions>

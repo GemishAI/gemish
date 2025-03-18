@@ -3,7 +3,7 @@ import { AuthProviders } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
 
-export { metadata } from "@/config/metadata";
+export { authMetadata } from "@/config/metadata";
 
 export default async function RootLayout({
   children,
@@ -16,7 +16,7 @@ export default async function RootLayout({
         className={cn(
           inter.variable,
           urbanist.variable,
-          "antialiased flex items-center justify-center mx-auto min-h-screen max-w-3zl"
+          "antialiased flex items-center justify-center mx-auto min-h-screen w-full max-w-sm"
         )}
       >
         <AuthProviders>{children}</AuthProviders>

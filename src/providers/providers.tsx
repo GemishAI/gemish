@@ -6,7 +6,7 @@ import { SidebarProviderWrapper } from "@/components/sidebar/sidebar-provider-wr
 import { ChatProvider } from "./chat-provider";
 import { SWRProvider } from "./swr-provider";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function ChatProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
       storageKey="gemish-theme"
@@ -25,6 +25,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </SidebarProviderWrapper>
         </ChatProvider>
       </SWRProvider>
+    </ThemeProvider>
+  );
+}
+
+export function HomeProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider
+      storageKey="gemish-theme"
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+    >
+      <NuqsAdapterProvider>
+        {children}
+        <Toaster richColors />
+        <Analytics mode="production" />
+      </NuqsAdapterProvider>
     </ThemeProvider>
   );
 }

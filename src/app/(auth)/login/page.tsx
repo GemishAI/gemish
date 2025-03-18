@@ -4,9 +4,10 @@ import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { GithubIcon, Loader2, Mail } from "lucide-react";
+import { GithubIcon, Loader2, Mail, GalleryVerticalEnd } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const providers = ["github", "google"] as const;
 type Provider = (typeof providers)[number];
@@ -29,49 +30,38 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
-        <div className="text-center space-y-2">
-          <div className="flex justify-center mb-4">
-            {/* You can replace this with your actual logo */}
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">G</span>
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Welcome to Gemish
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            Sign in to access your personal AI assistant and unlock intelligent
-            conversations.
+    <div className="w-full flex flex-col gap-10 items-center justify-center">
+      <div className="w-full space-y-7">
+        <div className="flex flex-col gap-2">
+          <Link href="/" className="text-2xl font-medium font-urbanist">
+            Gemish
+          </Link>
+          <p className="text-muted-foreground text-pretty">
+            Sign in to your account to get the most out of Gemish AI
           </p>
         </div>
-
-        <div className="space-y-4 pt-4">
+        <div className="space-y-4 flex flex-col">
           <Button
             onClick={() => handleSocialLogin("github")}
-            className="w-full h-12 transition-all hover:translate-y-[-2px]"
             variant="outline"
             disabled={loadingProvider !== null}
+            size={"lg"}
           >
-            {loadingProvider === "github" ? (
+            {loadingProvider === "github" ?
               <Loader2 size={18} className="animate-spin mr-3" />
-            ) : (
-              <GithubIcon className="mr-3" size={18} />
-            )}
+            : <GithubIcon className="mr-3" size={18} />}
             Continue with GitHub
           </Button>
 
           <Button
             onClick={() => handleSocialLogin("google")}
-            className="w-full h-12 transition-all hover:translate-y-[-2px]"
             variant="outline"
             disabled={loadingProvider !== null}
+            size={"lg"}
           >
-            {loadingProvider === "google" ? (
+            {loadingProvider === "google" ?
               <Loader2 size={18} className="animate-spin mr-3" />
-            ) : (
-              <div className="mr-3">
+            : <div className="mr-3">
                 <svg
                   width="18"
                   height="18"
@@ -96,11 +86,14 @@ export default function Login() {
                   />
                 </svg>
               </div>
-            )}
+            }
             Continue with Google
           </Button>
         </div>
       </div>
+      <p className="text-muted-foreground text-sm text-pretty">
+        By Signing in, you agree to our Terms of Service and Privacy Policy.
+      </p>
     </div>
   );
 }

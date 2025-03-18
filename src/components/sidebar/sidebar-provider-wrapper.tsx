@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { cookies } from "next/headers";
 import { ClosedNav } from "./closed-nav";
+import { MobileNav } from "./mobile-nav";
 
 export async function SidebarProviderWrapper({
   children,
@@ -14,11 +15,10 @@ export async function SidebarProviderWrapper({
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
+      <ClosedNav />
       <SidebarInset>
-        <div className="flex flex-1 flex-col  p-4 pt-0">
-          <ClosedNav />
-          {children}
-        </div>
+        <MobileNav />
+        <div className="flex  flex-col  p-4 pt-0 w-full h-full">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

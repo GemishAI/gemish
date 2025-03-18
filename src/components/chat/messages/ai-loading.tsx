@@ -5,11 +5,22 @@ import {
 import { Loader } from "@/components/prompt-kit/loader";
 import type { Message } from "ai";
 
-export function AILoading() {
+interface AILoadingProps {
+  status: "submitted" | "error" | "ready" | "streaming";
+  messages: Message[];
+}
+
+export function AILoading({ status, messages }: AILoadingProps) {
   return (
-    <MessageComponent className="justify-start">
-      <MessageAvatar src="/avatars/gemini.png" alt="AI" fallback="AI" />
-      <Loader text="Thinking" variant="loading-dots" size="md" />
-    </MessageComponent>
+    <>
+      {status === "submitted" &&
+        messages.length > 0 &&
+        messages[messages.length - 1].role === "user" && (
+          <MessageComponent className="justify-start">
+            <MessageAvatar src="/avatars/gemini.png" alt="AI" fallback="AI" />
+            <Loader text="Thinking..." variant="text-shimmer" size="lg" />
+          </MessageComponent>
+        )}
+    </>
   );
 }

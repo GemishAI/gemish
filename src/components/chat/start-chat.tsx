@@ -99,7 +99,9 @@ export function StartChat() {
 
   return (
     <div className="flex flex-col w-full h-full ">
-      <h1 className="text-4xl font-medium text-center mb-10">{greeting}</h1>
+      <h1 className="lg:text-4xl text-3xl font-medium text-center lg:mb-10 mb-8">
+        {greeting}
+      </h1>
 
       <div className="flex w-full flex-col space-y-4">
         <ChatInput

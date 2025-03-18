@@ -8,12 +8,12 @@ import { useChat } from "@/providers/chat-provider";
 export default function ChatPage() {
   const params = useParams();
   const id = params?.id as string;
-  const { handleSubmit, pendingMessages } = useChat();
+  const { handleSubmit } = useChat();
 
   // Auto-trigger AI response for pending messages
   // In ChatPage.jsx
   useEffect(() => {
-    if (id && pendingMessages[id]) {
+    if (id) {
       // Add a longer delay to ensure the chat interface is fully loaded
       const timer = setTimeout(() => {
         // Only submit if this is still the active chat
@@ -24,10 +24,10 @@ export default function ChatPage() {
 
       return () => clearTimeout(timer);
     }
-  }, [id, pendingMessages, handleSubmit, params]);
+  }, [id, handleSubmit, params]);
 
   return (
-    <div className="w-full max-w-[825px]  mx-auto flex items-center justify-center">
+    <div className="w-full max-w-[825px] h-full mx-auto flex items-center justify-center">
       <ChatInterface id={id} />
     </div>
   );

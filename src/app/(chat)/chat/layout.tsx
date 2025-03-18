@@ -1,5 +1,5 @@
 import "@/styles/globals.css";
-import { Providers } from "@/providers/providers";
+import { ChatProviders } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
 
@@ -16,10 +16,10 @@ export default function RootLayout({
         className={cn(
           inter.variable,
           urbanist.variable,
-          "antialiased min-h-screen w-full"
+          "antialiased h-full w-full"
         )}
       >
-        <Providers>{children}</Providers>
+        <ChatProviders>{children}</ChatProviders>
       </body>
     </html>
   );

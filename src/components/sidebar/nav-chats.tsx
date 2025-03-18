@@ -37,7 +37,7 @@ export function NavChats() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Recent Conversations</SidebarGroupLabel>
+      <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
       <SidebarGroupContent>
         {(isLoading || isRetrying) && (
           <SidebarMenu>
@@ -51,7 +51,7 @@ export function NavChats() {
 
         {error && (
           <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-            <h3 className="font-medium">Unable to load conversations</h3>
+            <h3 className="font-medium">Unable to load chats</h3>
             <Button
               onClick={handleRetry}
               size="sm"
@@ -68,7 +68,7 @@ export function NavChats() {
           <div className="flex flex-col items-center justify-center gap-1 p-4 text-center">
             <h3 className="font-medium ">No conversations yet</h3>
             <p className="text-sm text-gray-500">
-              Your recent conversations will appear here
+              Your recent chats will appear here
             </p>
           </div>
         )}
@@ -79,13 +79,13 @@ export function NavChats() {
               <SidebarMenuItem key={chat.id || chat.title}>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive(`/chat/${chat.id}`)}
+                  isActive={isActive(`/chat/c/${chat.id}`)}
                   className={cn(
                     "rounded-md",
                     isActive(`/chat/${chat.id}`) && "bg-black/50"
                   )}
                 >
-                  <Link href={`/chat/${chat.id}`}>
+                  <Link href={`/chat/c/${chat.id}`}>
                     <span>{chat.title || "Untitled conversation"}</span>
                   </Link>
                 </SidebarMenuButton>

@@ -12,11 +12,11 @@ import {
 import { NavMain } from "./nav-main";
 import { usePathname } from "next/navigation";
 import { MessageCirclePlus, MessagesSquare } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
+import Link from "next/link";
 import { NavUser } from "./nav-user";
 import { NavChats } from "./nav-chats";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar() {
   const pathname = usePathname();
 
   const isActive = (url: string) => pathname === url;
@@ -42,7 +42,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar>
       <SidebarHeader className="flex flex-col gap-3 mt-1">
         <nav className="flex flex-row justify-between items-center px-2">
-          <h1 className="text-lg font-semibold">Gemish</h1>
+          <Link href="/chat" className="text-lg font-semibold font-urbanist">
+            Gemish
+          </Link>
           <SidebarTrigger />
         </nav>
         <NavMain items={data.navMain} />
