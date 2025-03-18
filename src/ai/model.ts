@@ -30,6 +30,6 @@ export const gemish = customProvider({
     fast: google("gemini-2.0-flash-lite-preview-02-05"),
     normal: defaultModel,
     think: reasoningModel,
-    search: searchModel,
+    search: google("gemini-2.0-flash-001", { useSearchGrounding: true }),
   },
 });

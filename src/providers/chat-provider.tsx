@@ -10,6 +10,7 @@ import {
   useCallback,
   useRef,
   useTransition,
+  useMemo,
 } from "react";
 import { type Message } from "ai";
 import { useChat as useAIChat } from "@ai-sdk/react";
@@ -76,174 +77,40 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export function ChatProvider({ children }: { children: ReactNode }) {
-  const { mutate } = useSWRConfig();
-  const router = useRouter();
-
-  // Model state management
-  const [model, setModelState] = useState<ModelState>("normal");
+// Custom hook for model state management
+function useModelState() {
+  const [model, setModel] = useState<ModelState>("normal");
+  
   const isSearchActive = model === "search";
   const isThinkActive = model === "think";
 
-  // Toggle functions for model states
   const toggleSearch = useCallback(() => {
-    setModelState((prev) => (prev === "search" ? "normal" : "search"));
+    setModel((prev) => (prev === "search" ? "normal" : "search"));
   }, []);
 
   const toggleThink = useCallback(() => {
-    setModelState((prev) => (prev === "think" ? "normal" : "think"));
+    setModel((prev) => (prev === "think" ? "normal" : "think"));
   }, []);
 
-  // State management
+  return {
+    model,
+    setModel,
+    isSearchActive,
+    isThinkActive,
+    toggleSearch,
+    toggleThink,
+  };
+}
+
+// Custom hook for file handling
+function useFileHandling() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [fileList, setFileList] = useState<File[]>([]);
   const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [chats, setChats] = useState<Record<string, Message[]>>({});
-  const [activeChat, setActiveChat] = useState<string | null>(null);
-  const [pendingMessages, setPendingMessages] = useState<
-    Record<string, Message>
-  >({});
-  const [isChatLoading, startTransition] = useTransition();
-
-  // Ref for tracking if AI response is needed (prevents unneeded re-renders)
-  const needsAiResponse = useRef(false);
-
-  // Memoize initial messages to prevent unnecessary recreations
-  const initialMessages = useCallback(() => {
-    if (!activeChat || !chats[activeChat]) return [];
-    return chats[activeChat];
-  }, [activeChat, chats]);
-
-  // Enhanced AI chat hook with improved request preparation
-  const {
-    messages,
-    input,
-    setInput,
-    handleSubmit: aiHandleSubmit,
-    status,
-    stop,
-    reload,
-    setMessages,
-    error,
-  } = useAIChat({
-    api: "/api/ai",
-    id: activeChat || undefined,
-    initialMessages: initialMessages(),
-    experimental_throttle: 50,
-    generateId: createIdGenerator({
-      prefix: "msgc",
-      separator: "_",
-    }),
-    onError(error) {
-      console.log(error);
-    },
-    experimental_prepareRequestBody: useCallback(
-      ({ messages, id }: { messages: Message[]; id: string }) => {
-        // If we have a pending message for the active chat, prioritize it
-        if (id && pendingMessages[id]) {
-          return { message: pendingMessages[id], id, model };
-        }
-
-        // Otherwise, send the last message in the conversation
-        if (messages.length > 0) {
-          return { message: messages[messages.length - 1], id, model };
-        }
-
-        // Fallback for empty conversations
-        return { messages, id, model };
-      },
-      [pendingMessages, model]
-    ),
-    onFinish: useCallback(
-      (message: Message) => {
-        if (!activeChat) return;
-
-        setChats((prev) => {
-          const currentMessages = prev[activeChat] || [];
-          return {
-            ...prev,
-            [activeChat]: [...currentMessages, message],
-          };
-        });
-
-        // Clear pending status
-        setPendingMessages((prev) => {
-          if (!prev[activeChat]) return prev;
-
-          const newPending = { ...prev };
-          delete newPending[activeChat];
-          return newPending;
-        });
-
-        // Reset the trigger flag
-        needsAiResponse.current = false;
-      },
-      [activeChat]
-    ),
-  });
-
-  // Create a new chat with an initial message - debounced to prevent accidental double creation
-  const createChat = useDebouncedCallback(
-    async (initialMessage: string) => {
-      const chatId = generateId();
-      const initialMessageObj: Message = {
-        id: generateId(),
-        role: "user",
-        content: initialMessage,
-        createdAt: new Date(),
-      };
-
-      needsAiResponse.current = true;
-
-      // Update local state first
-      setChats((prev) => ({
-        ...prev,
-        [chatId]: [initialMessageObj],
-      }));
-
-      try {
-        // Get all successfully uploaded file URLs
-        // Create the chat on the server with the initial message
-        const response = await fetch("/api/chats", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: chatId,
-            message: initialMessage,
-            model, // Include the current model state
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to create chat");
-        }
-
-        // Set this as the active chat
-        setActiveChat(chatId);
-        setMessages([initialMessageObj]);
-        router.push(`/chat/${chatId}`);
-        mutate(
-          (key) => typeof key === "string" && key.startsWith("/api/chats")
-        );
-      } catch (error) {
-        // Clean up if creation failed
-        setChats((prev) => {
-          const newChats = { ...prev };
-          delete newChats[chatId];
-          return newChats;
-        });
-
-        throw error;
-      }
-    },
-    300,
-    { leading: true, trailing: false }
-  );
-
-  const uploadFileToS3 = async (file: File, id: string) => {
+  const uploadFileToS3 = useCallback(async (file: File, id: string) => {
     try {
       // Update status to uploading
       setFileUploads((prev) =>
@@ -269,8 +136,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         throw new Error(errorData.error || "Failed to generate upload URL");
       }
 
-      console.log(urlResponse, "chat provider presigned url");
-
       const { presignedUrl, url: fileUrl } = await urlResponse.json();
 
       // Step 2: Upload to S3 using XHR for progress tracking
@@ -295,9 +160,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           if (xhr.status >= 200 && xhr.status < 300) {
             setFileUploads((prev) =>
               prev.map((item) =>
-                item.id === id
-                  ? { ...item, status: "success" as const, url: fileUrl }
-                  : item
+                item.id === id ?
+                  { ...item, status: "success" as const, url: fileUrl }
+                : item
               )
             );
 
@@ -330,15 +195,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const errorMessage = err.message || "An error occurred during upload";
       setFileUploads((prev) =>
         prev.map((item) =>
-          item.id === id
-            ? { ...item, status: "error" as const, error: errorMessage }
-            : item
+          item.id === id ?
+            { ...item, status: "error" as const, error: errorMessage }
+          : item
         )
       );
     }
-  };
+  }, []);
 
-  const uploadAllFiles = async (files: FileUploadStatus[]) => {
+  const uploadAllFiles = useCallback(async (files: FileUploadStatus[]) => {
     setIsUploading(true);
 
     try {
@@ -351,9 +216,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [uploadFileToS3]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -376,10 +241,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     // Reset the input
     if (event.target.value) event.target.value = "";
-  };
+  }, [uploadAllFiles]);
 
-  // Add function to remove a URL when its file is removed
-  const removeFile = (file: File) => {
+  const removeFile = useCallback((file: File) => {
     // Find the upload status for this file to get its URL
     const uploadItem = fileUploads.find((item) => item.file === file);
 
@@ -395,10 +259,211 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         prev.filter((attachment) => attachment.url !== uploadItem.url)
       );
     }
+  }, [fileUploads]);
+
+  const clearFiles = useCallback(() => {
+    setFileList([]);
+    setFileUploads([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  const clearAttachments = useCallback(() => {
+    setAttachments([]);
+  }, []);
+
+  return {
+    attachments,
+    fileList,
+    fileUploads,
+    isUploading,
+    fileInputRef,
+    handleFileChange,
+    removeFile,
+    clearFiles,
+    clearAttachments,
   };
+}
+
+// Custom hook for chat state management
+function useChatState() {
+  const [chats, setChats] = useState<Record<string, Message[]>>({});
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [pendingMessages, setPendingMessages] = useState<Record<string, Message>>({});
+  
+  return {
+    chats,
+    setChats,
+    activeChat,
+    setActiveChat,
+    pendingMessages,
+    setPendingMessages,
+  };
+}
+
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const { mutate } = useSWRConfig();
+  const router = useRouter();
+  const [isChatLoading, startTransition] = useTransition();
+  
+  // Use custom hooks to separate concerns
+  const modelState = useModelState();
+  const { 
+    attachments, 
+    fileList, 
+    fileUploads, 
+    isUploading, 
+    fileInputRef, 
+    handleFileChange, 
+    removeFile, 
+    clearFiles,
+    clearAttachments
+  } = useFileHandling();
+  const { 
+    chats, 
+    setChats, 
+    activeChat, 
+    setActiveChat, 
+    pendingMessages, 
+    setPendingMessages 
+  } = useChatState();
+
+  // Ref for tracking if AI response is needed (prevents unneeded re-renders)
+  const needsAiResponse = useRef(false);
+
+  // Memoize initial messages to prevent unnecessary recreations
+  const initialMessages = useMemo(() => {
+    if (!activeChat || !chats[activeChat]) return [];
+    return chats[activeChat];
+  }, [activeChat, chats]);
+
+  // Enhanced AI chat hook with improved request preparation
+  const {
+    messages,
+    input,
+    setInput,
+    handleSubmit: aiHandleSubmit,
+    status,
+    stop,
+    reload,
+    setMessages,
+    error,
+  } = useAIChat({
+    api: "/api/ai",
+    id: activeChat || undefined,
+    initialMessages,
+    experimental_throttle: 50,
+    generateId: createIdGenerator({
+      prefix: "msgc",
+      separator: "_",
+    }),
+    onError(error) {
+      console.log(error);
+    },
+    experimental_prepareRequestBody: useCallback(
+      ({ messages, id }: { messages: Message[]; id: string }) => {
+        // If we have a pending message for the active chat, prioritize it
+        if (id && pendingMessages[id]) {
+          return { message: pendingMessages[id], id, model: modelState.model };
+        }
+
+        // Otherwise, send the last message in the conversation
+        if (messages.length > 0) {
+          return { message: messages[messages.length - 1], id, model: modelState.model };
+        }
+
+        // Fallback for empty conversations
+        return { messages, id, model: modelState.model };
+      },
+      [pendingMessages, modelState.model]
+    ),
+    onFinish: useCallback(
+      (message: Message) => {
+        if (!activeChat) return;
+
+        setChats((prev) => {
+          const currentMessages = prev[activeChat] || [];
+          return {
+            ...prev,
+            [activeChat]: [...currentMessages, message],
+          };
+        });
+
+        // Clear pending status
+        setPendingMessages((prev) => {
+          if (!prev[activeChat]) return prev;
+
+          const newPending = { ...prev };
+          delete newPending[activeChat];
+          return newPending;
+        });
+
+        // Reset the trigger flag
+        needsAiResponse.current = false;
+      },
+      [activeChat, setChats, setPendingMessages]
+    ),
+  });
+
+  // Create a new chat with an initial message - debounced to prevent accidental double creation
+  const createChat = useDebouncedCallback(
+    async (initialMessage: string) => {
+      const chatId = generateId();
+      const initialMessageObj: Message = {
+        id: generateId(),
+        role: "user",
+        content: initialMessage,
+        createdAt: new Date(),
+      };
+
+      needsAiResponse.current = true;
+
+      // Update local state first
+      setChats((prev) => ({
+        ...prev,
+        [chatId]: [initialMessageObj],
+      }));
+
+      try {
+        // Create the chat on the server with the initial message
+        const response = await fetch("/api/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            message: initialMessage,
+            model: modelState.model, // Include the current model state
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create chat");
+        }
+
+        // Set this as the active chat
+        setActiveChat(chatId);
+        setMessages([initialMessageObj]);
+        router.push(`/chat/${chatId}`);
+        mutate(
+          (key) => typeof key === "string" && key.startsWith("/api/chats")
+        );
+      } catch (error) {
+        // Clean up if creation failed
+        setChats((prev) => {
+          const newChats = { ...prev };
+          delete newChats[chatId];
+          return newChats;
+        });
+
+        throw error;
+      }
+    },
+    300,
+    { leading: true, trailing: false }
+  );
 
   // Optimized submit handler with proper dependency tracking
-  // In chat-provider.tsx, update the handleSubmit function:
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
       if (!activeChat || !input.trim()) return;
@@ -440,35 +505,31 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             currentAttachments.length > 0 ? currentAttachments : undefined,
         });
         // Only clear attachments after sending
-        setAttachments([]);
+        clearAttachments();
       });
 
       // Only clear file UI references
-      setFileList([]);
-      setFileUploads([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      clearFiles();
     },
-    [activeChat, input, setInput, aiHandleSubmit, attachments]
+    [activeChat, input, aiHandleSubmit, attachments, clearAttachments, clearFiles, setPendingMessages, setChats]
   );
+
   // Effect to trigger AI response when necessary
   useEffect(() => {
     if (activeChat && needsAiResponse.current && status === "ready") {
       const currentAttachments = [...attachments];
 
       const timer = setTimeout(() => {
-        aiHandleSubmit(event, {
+        aiHandleSubmit(new Event('submit') as any, {
           experimental_attachments:
             currentAttachments.length > 0 ? currentAttachments : undefined,
         });
 
         // Once we've sent the attachments to the AI, we can clear them
-        setAttachments([]);
+        clearAttachments();
 
         // Clear files and attachments after successful submission
-        setFileList([]);
-        setFileUploads([]);
+        clearFiles();
 
         // Reset the flag to prevent multiple triggers
         needsAiResponse.current = false;
@@ -476,11 +537,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       return () => clearTimeout(timer);
     }
-  }, [activeChat, status, aiHandleSubmit, attachments]);
+  }, [activeChat, status, aiHandleSubmit, attachments, clearAttachments, clearFiles]);
 
   // Memoized function to set active chat and load messages if needed
-  // In ChatProvider.tsx, modify the setActiveChatWithLoad function:
-
   const setActiveChatWithLoad = useCallback(
     (chatId: string | null) => {
       if (chatId === activeChat) return;
@@ -557,11 +616,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       });
     },
-    [activeChat, chats, setMessages]
+    [activeChat, chats, setMessages, setActiveChat, setChats]
   );
 
   // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useCallback(
+  const contextValue = useMemo(
     () => ({
       chats,
       activeChat,
@@ -583,13 +642,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       handleFileChange,
       isUploading,
       fileUploads,
-      // Added model-related properties
-      model,
-      setModel: setModelState,
-      isSearchActive,
-      isThinkActive,
-      toggleSearch,
-      toggleThink,
+      // Model-related properties
+      model: modelState.model,
+      setModel: modelState.setModel,
+      isSearchActive: modelState.isSearchActive,
+      isThinkActive: modelState.isThinkActive,
+      toggleSearch: modelState.toggleSearch,
+      toggleThink: modelState.toggleThink,
     }),
     [
       chats,
@@ -612,18 +671,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       handleFileChange,
       isUploading,
       fileUploads,
-      // Added model-related dependencies
-      model,
-      setModelState,
-      isSearchActive,
-      isThinkActive,
-      toggleSearch,
-      toggleThink,
+      modelState,
     ]
   );
 
   return (
-    <ChatContext.Provider value={contextValue()}>
+    <ChatContext.Provider value={contextValue}>
       {children}
     </ChatContext.Provider>
   );

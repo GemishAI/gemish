@@ -16,13 +16,8 @@ import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
 import { MessageAttachments } from "./messages/message-attachments";
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningResponse,
-  ReasoningTrigger,
-} from "@/components/prompt-kit/reasoning";
-import Link from "next/link";
+import { AISourcesList } from "./messages/ai-sources";
+import { AIReasoning } from "./messages/ai-reasoning";
 
 interface ChatInterfaceProps {
   id: string;
@@ -30,7 +25,6 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ id }: ChatInterfaceProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const submittedRef = useRef(false);
 
   const {
@@ -91,25 +85,24 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
   );
 
   return (
-    <div className="w-full h-screen relative flex flex-col">
-      {isChatLoading ? (
+    <div className="w-full h-full relative flex flex-col">
+      {isChatLoading ?
         <div className="flex-1 flex items-center justify-center">
           <LoaderSpinner width="20" height="20" />
         </div>
-      ) : (
-        <div className="flex h-screen w-full  flex-col overflow-hidden">
+      : <div className="flex min-h-screen pt-5 pb-20 w-full  flex-col overflow-hidden">
           <ChatContainer
             ref={chatContainerRef}
             autoScroll={true}
-            className=" p-4 flex-1   space-y-8"
+            className=" flex-1   space-y-8"
           >
             {messages.map((message) => (
               <MessageComponent
                 key={message.id}
                 className={
-                  message.role === "user"
-                    ? "justify-end"
-                    : "justify-start h-full"
+                  message.role === "user" ?
+                    "justify-end"
+                  : "justify-start h-full"
                 }
               >
                 {message.role === "assistant" && (
@@ -122,7 +115,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                   </div>
                 )}
 
-                {message.role === "user" ? (
+                {message.role === "user" ?
                   <div className="flex flex-col items-end w-full gap-1">
                     {message.experimental_attachments && (
                       <MessageAttachments
@@ -142,32 +135,16 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         })}
                     </MessageContent>
                   </div>
-                ) : (
-                  <div className="w-full flex flex-col items-start gap-2">
-                    {/* Check if reasoning exists in message.parts */}
+                : <div className="w-full flex flex-col items-start gap-2">
+                    {/* Reasoning Component */}
                     {message.parts &&
-                      message.parts.some(
-                        (part) => part.type === "reasoning"
-                      ) && (
-                        <Reasoning>
-                          <div className="flex w-full flex-col gap-3">
-                            <ReasoningTrigger>Show reasoning</ReasoningTrigger>
-                            <ReasoningContent className="ml-2 border-l-2 border-l-slate-200 px-2 pb-1 dark:border-l-slate-700">
-                              <ReasoningResponse
-                                text={message.parts
-                                  .filter((part) => part.type === "reasoning")
-                                  .flatMap((part) =>
-                                    part.details
-                                      .filter(
-                                        (detail) => detail.type === "text"
-                                      )
-                                      .map((detail) => detail.text)
-                                  )
-                                  .join("\n")}
-                              />
-                            </ReasoningContent>
-                          </div>
-                        </Reasoning>
+                      message.parts.filter((part) => part.type === "reasoning")
+                        .length > 0 && (
+                        <AIReasoning
+                          reasoningParts={message.parts.filter(
+                            (part) => part.type === "reasoning"
+                          )}
+                        />
                       )}
 
                     {/* Render text parts after reasoning */}
@@ -184,48 +161,33 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         return null;
                       })}
 
+                    {/* Check if sources exists in message.parts */}
                     {message.parts &&
-                      message.parts
-                        .filter((part) => part.type === "source")
-                        .map((part, index) => (
-                          <div
-                            key={`source-${part.source.id}`}
-                            className="flex items-center bg-gray-900 text-gray-200 rounded-md px-3 py-2"
-                          >
-                            <span className="mr-2 text-gray-400">
-                              {index + 1}
-                            </span>
-                            <div className="flex flex-col">
-                              <div className="text-sm font-medium">
-                                {part.source.title ||
-                                  new URL(part.source.url).hostname}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                <Link
-                                  href={part.source.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline"
-                                >
-                                  {part.source.url}
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      message.parts.filter((part) => part.type === "source")
+                        .length > 0 && (
+                        <AISourcesList
+                          sources={message.parts
+                            .filter((part) => part.type === "source")
+                            .map((part) => part.source)}
+                        />
+                      )}
                   </div>
-                )}
+                }
               </MessageComponent>
             ))}
 
-            <AIErrorMessage error={error} reload={reload} />
+            {/* show errror if there is error */}
+            {error && <AIErrorMessage reload={reload} />}
 
-            <AILoading status={status} messages={messages} />
+            {status === "submitted" &&
+              messages.length > 0 &&
+              messages[messages.length - 1].role === "user" && <AILoading />}
           </ChatContainer>
         </div>
-      )}
-      <div className="w-full pb-6 bg-background sticky bottom-0">
-        <div className=" w-full mx-auto px-4">
+      }
+
+      <div className="w-full  bg-background fixed pb-4 bottom-0 inset-x-0">
+        <div className=" w-full mx-auto px-4 max-w-3xl">
           <ChatInput
             input={input}
             handleKeyDown={handleKeyDown}

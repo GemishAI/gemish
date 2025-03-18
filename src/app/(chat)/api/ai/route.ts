@@ -8,7 +8,6 @@ import {
   validateChatOwnership,
 } from "@/server/db/message-loader";
 import { type Message, smoothStream, wrapLanguageModel } from "ai";
-import { cacheMiddleware } from "@/ai/cache-middleware";
 import { createIdGenerator } from "ai";
 import { gemish } from "@/ai/model";
 
@@ -22,14 +21,14 @@ export async function POST(req: Request) {
     model,
   }: { message: Message; id: string; model: string } = await req.json();
 
+  console.log("model", model);
+
   if (!message || !id) {
     return NextResponse.json(
       { error: "Message and chat ID are required" },
       { status: 400 }
     );
   }
-
-  console.log(JSON.stringify(message, null, 2), "API");
 
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -71,7 +70,7 @@ export async function POST(req: Request) {
         "You are a helpful assistant. Respond to the user in Markdown format.",
       experimental_transform: smoothStream({
         delayInMs: 20,
-        chunking: "word",
+        chunking: "line",
       }),
       experimental_generateMessageId: createIdGenerator({
         prefix: "msgs",
@@ -88,6 +87,8 @@ export async function POST(req: Request) {
         });
       },
     });
+
+    console.log(JSON.stringify(result.sources, null, 2), "sources");
 
     // consume the stream to ensure it runs to completion & triggers onFinish
     // even when the client response is aborted:

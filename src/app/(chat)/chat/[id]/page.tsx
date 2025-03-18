@@ -27,7 +27,7 @@ export default function ChatPage() {
   }, [id, pendingMessages, handleSubmit, params]);
 
   return (
-    <div className="w-full max-w-[825px]  mx-auto h-full flex items-center justify-center pt-4">
+    <div className="w-full max-w-[825px]  mx-auto flex items-center justify-center">
       <ChatInterface id={id} />
     </div>
   );
