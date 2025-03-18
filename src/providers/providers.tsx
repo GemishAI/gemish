@@ -49,6 +49,7 @@ export function HomeProviders({ children }: { children: React.ReactNode }) {
 export function AuthProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
+      storageKey="gemish-theme"
       attribute="class"
       defaultTheme="system"
       enableSystem
