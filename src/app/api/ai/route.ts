@@ -56,9 +56,13 @@ export async function POST(req: Request) {
 
     const messages = appendClientMessage({
       messages:
-        previousMessages?.[0]?.content === "" ?
+        (
+          !previousMessages?.length ||
+          previousMessages?.[0]?.content === "" ||
+          model === "search"
+        ) ?
           []
-        : previousMessages || (model === "search" ? [] : []),
+        : previousMessages,
       message,
     });
 
