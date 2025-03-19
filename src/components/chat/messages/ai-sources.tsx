@@ -80,7 +80,7 @@ export const AISourcesList: React.FC<AISourcesListProps> = ({ sources }) => {
   return (
     <div className="flex flex-col gap-3">
       <h1 className="text-sm font-medium text-muted-foreground">Sources</h1>
-      <ScrollArea className="max-h-48">
+      <ScrollArea className="w-full overflow-x-auto">
         <div className="flex flex-col gap-2">
           <div className="flex overflow-x-auto">
             {sourcesWithMetadata.map((source, index) => (
@@ -94,13 +94,12 @@ export const AISourcesList: React.FC<AISourcesListProps> = ({ sources }) => {
                 onMouseLeave={() => handleMouseLeave(source.id)}
               >
                 <div className="flex items-center w-full">
-                  {source.isHovered ? (
+                  {source.isHovered ?
                     <ExternalLink className="w-4 h-4 text-muted-foreground mr-2" />
-                  ) : (
-                    <span className="font-mono text-muted-foreground mr-2">
+                  : <span className="font-mono text-muted-foreground mr-2">
                       {index + 1}
                     </span>
-                  )}
+                  }
                   {source.favicon && (
                     <img
                       src={source.favicon}
@@ -110,9 +109,9 @@ export const AISourcesList: React.FC<AISourcesListProps> = ({ sources }) => {
                   )}
                   <div className="flex flex-col overflow-hidden">
                     <div className="text-sm font-medium text-foreground truncate">
-                      {source.title
-                        ? truncateText(source.title)
-                        : new URL(source.url).hostname}
+                      {source.title ?
+                        truncateText(source.title)
+                      : new URL(source.url).hostname}
                     </div>
                   </div>
                 </div>

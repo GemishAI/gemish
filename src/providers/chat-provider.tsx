@@ -9,6 +9,7 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useTransition,
 } from "react";
 import { type Message } from "ai";
 import { useChat as useAIChat } from "@ai-sdk/react";
@@ -17,6 +18,12 @@ import { type DebouncedState, useDebouncedCallback } from "use-debounce";
 import { createIdGenerator } from "ai";
 import { useSWRConfig } from "swr";
 import { useRouter } from "next/navigation";
+import {
+  type FileUploadStatus,
+  type ModelState,
+  useFileUpload,
+} from "@/hooks/chat-provider";
+import { useModel } from "@/hooks/chat-provider/useModel";
 
 interface ChatContextType {
   // Chat state
@@ -32,17 +39,28 @@ interface ChatContextType {
   messages: Message[];
   input: string;
   setInput: React.Dispatch<React.SetStateAction<string>>;
-  handleSubmit: (event: React.FormEvent) => Promise<void>;
+  handleSubmit: DebouncedState<(event?: React.FormEvent) => Promise<void>>;
   status: "submitted" | "streaming" | "ready" | "error";
   stop: () => void;
   reload: () => void;
   isChatLoading: boolean;
   error: Error | undefined;
 
+  // File upload
+  isUploading: boolean;
+  fileUploads: FileUploadStatus[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   fileList: File[];
   removeFile: (file: File) => void;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+
+  // Model state
+  model: ModelState;
+  setModelState: (model: ModelState) => void;
+  toggleSearch: () => void;
+  toggleThink: () => void;
+  isSearchActive: boolean;
+  isThinkActive: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -50,21 +68,39 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { mutate } = useSWRConfig();
   const router = useRouter();
-  // State management
-  const model = "fast";
-  const [files, setFiles] = useState<FileList | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fileList = files ? Array.from(files) : [];
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [pendingMessages, setPendingMessages] = useState<
     Record<string, Message>
   >({});
-  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatLoading, startTransition] = useTransition();
 
   // Ref for tracking if AI response is needed (prevents unneeded re-renders)
   const needsAiResponse = useRef(false);
+
+  // File upload
+  const {
+    isUploading,
+    fileInputRef,
+    fileList,
+    handleFileChange,
+    currentAttachments,
+    fileUploads,
+    removeFile,
+    clearAttachments,
+    clearFileUploads,
+  } = useFileUpload();
+
+  // Model state
+  const {
+    model,
+    setModelState,
+    toggleSearch,
+    toggleThink,
+    isSearchActive,
+    isThinkActive,
+  } = useModel();
 
   // Memoize initial messages to prevent unnecessary recreations
   const initialMessages = useCallback(() => {
@@ -195,8 +231,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   );
 
   // Optimized submit handler with proper dependency tracking
-  const handleSubmit = useCallback(
-    async (event: React.FormEvent) => {
+  const handleSubmit = useDebouncedCallback(
+    async (event?: React.FormEvent) => {
       if (!activeChat || !input.trim()) return;
 
       const userMessage: Message = {
@@ -226,25 +262,30 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Use a microtask instead of setTimeout for more reliable execution
       queueMicrotask(() => {
         aiHandleSubmit(event, {
-          experimental_attachments: files,
+          experimental_attachments:
+            currentAttachments.length > 0 ? currentAttachments : undefined,
         });
+        clearAttachments();
       });
 
-      setFiles(undefined);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      clearFileUploads();
     },
-    [activeChat, input, setInput, aiHandleSubmit]
+    300,
+    { leading: true, trailing: false }
   );
 
   // Effect to trigger AI response when necessary
   useEffect(() => {
     if (activeChat && needsAiResponse.current && status === "ready") {
       const timer = setTimeout(() => {
-        aiHandleSubmit();
+        aiHandleSubmit(undefined, {
+          experimental_attachments:
+            currentAttachments.length > 0 ? currentAttachments : undefined,
+        });
+        clearAttachments();
       }, 200);
 
+      clearFileUploads();
       return () => clearTimeout(timer);
     }
   }, [activeChat, status, aiHandleSubmit]);
@@ -277,8 +318,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
 
       // Fetch chat messages from server
-      const fetchChatMessages = async () => {
-        setIsChatLoading(true);
+      startTransition(async () => {
         try {
           const response = await fetch(`/api/chats/${chatId}/messages`);
           const data = await response.json();
@@ -310,106 +350,51 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error("Failed to load chat:", error);
-          setIsChatLoading(false);
+
           if (activeChat === chatId) {
             setMessages([]);
           }
-        } finally {
-          setIsChatLoading(false);
         }
-      };
-
-      fetchChatMessages();
+      });
     },
     [activeChat, chats, setMessages]
   );
 
-  const removeFile = useCallback(
-    (fileToRemove: File) => {
-      if (files) {
-        const dt = new DataTransfer();
-        Array.from(files).forEach((file) => {
-          if (file !== fileToRemove) {
-            dt.items.add(file);
-          }
-        });
-        setFiles(dt.files);
-        if (fileInputRef.current) {
-          fileInputRef.current.files = dt.files;
-        }
-      }
-    },
-    [files]
-  );
+  const context: ChatContextType = {
+    chats,
+    activeChat,
+    pendingMessages,
+    createChat,
+    setActiveChat: setActiveChatWithLoad,
+    messages,
+    input,
+    setInput,
+    handleSubmit,
+    status,
+    stop,
+    reload,
+    isChatLoading,
+    error,
 
-  const handleFileChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (event.target.files) {
-        const newFiles = Array.from(event.target.files);
-        const dt = new DataTransfer();
+    // File upload
+    fileInputRef,
+    fileList,
+    removeFile,
+    handleFileChange,
+    isUploading,
+    fileUploads,
 
-        // Add existing files
-        if (files) {
-          Array.from(files).forEach((file) => dt.items.add(file));
-        }
-
-        // Add new files
-        newFiles.forEach((file) => dt.items.add(file));
-
-        setFiles(dt.files);
-      }
-    },
-    [files]
-  );
-
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useCallback(
-    () => ({
-      chats,
-      activeChat,
-      pendingMessages,
-      createChat,
-      setActiveChat: setActiveChatWithLoad,
-      messages,
-      input,
-      setInput,
-      handleSubmit,
-      status,
-      stop,
-      reload,
-      isChatLoading,
-      error,
-      fileInputRef,
-      fileList,
-      removeFile,
-      handleFileChange,
-    }),
-    [
-      chats,
-      activeChat,
-      pendingMessages,
-      createChat,
-      setActiveChatWithLoad,
-      messages,
-      input,
-      setInput,
-      handleSubmit,
-      status,
-      stop,
-      reload,
-      isChatLoading,
-      error,
-      fileInputRef,
-      fileList,
-      removeFile,
-      handleFileChange,
-    ]
-  );
+    // Model state
+    model,
+    setModelState,
+    toggleSearch,
+    toggleThink,
+    isSearchActive,
+    isThinkActive,
+  };
 
   return (
-    <ChatContext.Provider value={contextValue()}>
-      {children}
-    </ChatContext.Provider>
+    <ChatContext.Provider value={context}>{children}</ChatContext.Provider>
   );
 }
 

@@ -1,19 +1,21 @@
-import { useCallback } from "react";
-import { FileAction } from "./useFileReducer";
+import { useState, useRef, useTransition, useCallback } from "react";
+import type { Attachment, FileUploadStatus } from "./types";
 
-/**
- * Custom hook for file upload functionality
- */
-export function useFileUpload(dispatch: React.Dispatch<FileAction>) {
+export function useFileUpload() {
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [fileList, setFileList] = useState<File[]>([]);
+  const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
+  const [isUploading, startTransition] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const uploadFileToS3 = useCallback(async (file: File, id: string) => {
     try {
-      // Update status to uploading
-      dispatch({ 
-        type: 'UPDATE_UPLOAD_STATUS', 
-        payload: { id, progress: 0, status: 'uploading' } 
-      });
+      setFileUploads((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: "uploading" as const } : item
+        )
+      );
 
-      // Step 1: Get presigned URL from your API
       const urlResponse = await fetch("/api/generate-presigned-url", {
         method: "POST",
         headers: {
@@ -32,29 +34,42 @@ export function useFileUpload(dispatch: React.Dispatch<FileAction>) {
 
       const { presignedUrl, url: fileUrl } = await urlResponse.json();
 
-      // Step 2: Upload to S3 using XHR for progress tracking
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        let lastProgress = 0;
 
-        // Set up progress monitoring
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
-            const percentComplete = Math.round(
-              (event.loaded / event.total) * 100
-            );
-            dispatch({ 
-              type: 'UPDATE_UPLOAD_STATUS', 
-              payload: { id, progress: percentComplete, status: 'uploading' } 
-            });
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            if (percentComplete !== lastProgress) {
+              lastProgress = percentComplete;
+              setFileUploads((prev) =>
+                prev.map((item) =>
+                  item.id === id ? { ...item, progress: percentComplete } : item
+                )
+              );
+            }
           }
         };
 
         xhr.onload = function () {
           if (xhr.status >= 200 && xhr.status < 300) {
-            dispatch({ 
-              type: 'UPDATE_UPLOAD_STATUS', 
-              payload: { id, progress: 100, status: 'success', url: fileUrl } 
-            });
+            setFileUploads((prev) =>
+              prev.map((item) =>
+                item.id === id
+                  ? { ...item, status: "success" as const, url: fileUrl }
+                  : item
+              )
+            );
+
+            setAttachments((prev) => [
+              ...prev,
+              {
+                name: file.name,
+                contentType: file.type,
+                url: fileUrl,
+              },
+            ]);
             resolve();
           } else {
             reject(new Error(`Upload failed with status ${xhr.status}`));
@@ -65,34 +80,102 @@ export function useFileUpload(dispatch: React.Dispatch<FileAction>) {
           reject(new Error("Network error occurred during upload"));
         };
 
-        // Open connection and send the file
         xhr.open("PUT", presignedUrl);
         xhr.setRequestHeader("Content-Type", file.type);
         xhr.send(file);
       });
     } catch (err: any) {
       const errorMessage = err.message || "An error occurred during upload";
-      dispatch({ 
-        type: 'UPDATE_UPLOAD_STATUS', 
-        payload: { id, progress: 0, status: 'error', error: errorMessage } 
-      });
-    }
-  }, [dispatch]);
-
-  const uploadAllFiles = useCallback(async (files: any[]) => {
-    dispatch({ type: 'SET_UPLOADING', payload: true });
-
-    try {
-      // Upload all files concurrently
-      await Promise.all(
-        files.map((fileUpload) =>
-          uploadFileToS3(fileUpload.file, fileUpload.id)
+      setFileUploads((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? { ...item, status: "error" as const, error: errorMessage }
+            : item
         )
       );
-    } finally {
-      dispatch({ type: 'SET_UPLOADING', payload: false });
     }
-  }, [dispatch, uploadFileToS3]);
+  }, []);
 
-  return { uploadFileToS3, uploadAllFiles };
+  const uploadAllFiles = useCallback((files: FileUploadStatus[]) => {
+    startTransition(async () => {
+      await Promise.all(
+        files.map((fileUpload) => uploadFileToS3(fileUpload.file, fileUpload.id))
+      );
+    });
+  }, [uploadFileToS3]);
+
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      const newFiles = Array.from(files);
+      const newFileUploads = newFiles.map((file) => ({
+        id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        file,
+        progress: 0,
+        status: "pending" as const,
+      }));
+
+      // Batch state updates together
+      startTransition(() => {
+        setFileList((prev) => [...prev, ...newFiles]);
+        setFileUploads((prev) => [...prev, ...newFileUploads]);
+      });
+
+      // Clear input value after state updates
+      if (event.target.value) event.target.value = "";
+      
+      // Start upload after state updates are complete
+      uploadAllFiles(newFileUploads);
+    },
+    [uploadAllFiles]
+  );
+
+  const removeFile = useCallback(
+    (file: File) => {
+      const uploadItem = fileUploads.find((item) => item.file === file);
+
+      // Batch state updates together
+      startTransition(() => {
+        setFileList((prev) => prev.filter((f) => f !== file));
+        setFileUploads((prev) => prev.filter((item) => item.file !== file));
+        if (uploadItem?.url) {
+          setAttachments((prev) =>
+            prev.filter((attachment) => attachment.url !== uploadItem.url)
+          );
+        }
+      });
+    },
+    [fileUploads]
+  );
+
+  // Memoize currentAttachments to prevent unnecessary re-renders
+  const currentAttachments = useCallback(() => [...attachments], [attachments]);
+
+  const clearAttachments = useCallback(() => {
+    setAttachments([]);
+  }, []);
+
+  const clearFileUploads = useCallback(() => {
+    startTransition(() => {
+      setFileList([]);
+      setFileUploads([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    });
+  }, []);
+
+  return {
+    isUploading,
+    fileInputRef,
+    fileList,
+    handleFileChange,
+    currentAttachments: currentAttachments(),
+    fileUploads,
+    removeFile,
+    clearAttachments,
+    clearFileUploads,
+  };
 }

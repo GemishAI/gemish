@@ -10,6 +10,11 @@ import {
 import { type Message, smoothStream, wrapLanguageModel } from "ai";
 import { createIdGenerator } from "ai";
 import { gemish } from "@/ai/model";
+import {
+  WEB_SEARCH_SYSTEM_PROMPT,
+  CONVERSATIONAL_AI_PROMPT,
+  FILE_ANALYSIS_AI_PROMPT,
+} from "@/config/system-prompts";
 
 export const maxDuration = 30;
 
@@ -50,27 +55,34 @@ export async function POST(req: Request) {
     const previousMessages = await loadChatMessages(id);
 
     const messages = appendClientMessage({
-      messages: previousMessages[0].content === "" ? [] : previousMessages,
+      messages:
+        previousMessages?.[0]?.content === "" ?
+          []
+        : previousMessages || (model === "search" ? [] : []),
       message,
     });
 
     console.log(JSON.stringify(messages, null, 2), "API");
 
-    // check if user has sent a PDF
+    // check if user has sent an attachment
     const messagesHaveAttachments = messages.some(
       (message) => message.experimental_attachments
     );
 
     const result = streamText({
-      model: messagesHaveAttachments
-        ? gemish.languageModel("normal")
+      model:
+        messagesHaveAttachments ?
+          gemish.languageModel("image")
         : gemish.languageModel(model),
       messages,
       system:
-        "You are a helpful assistant. Respond to the user in Markdown format.",
+        (messagesHaveAttachments && FILE_ANALYSIS_AI_PROMPT) ||
+        (model === "search" && WEB_SEARCH_SYSTEM_PROMPT) ||
+        (model === "nomal" && CONVERSATIONAL_AI_PROMPT) ||
+        CONVERSATIONAL_AI_PROMPT,
       experimental_transform: smoothStream({
-        delayInMs: 20,
-        chunking: "line",
+        delayInMs: 25,
+        chunking: "word",
       }),
       experimental_generateMessageId: createIdGenerator({
         prefix: "msgs",

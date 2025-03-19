@@ -35,9 +35,9 @@ export function SettingsNav() {
           onClick={() => onChange(value)}
           className={cn(
             "relative pb-2 text-sm font-medium transition-colors",
-            isActive
-              ? "text-foreground dark:text-foreground"
-              : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+            isActive ?
+              "text-foreground dark:text-foreground"
+            : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
           )}
         >
           <span>{label}</span>
@@ -54,10 +54,7 @@ export function SettingsNav() {
 
   // Define navigation options using useMemo to prevent unnecessary recreations
   const navOptions = React.useMemo(
-    () => [
-      { value: "account" as const, label: "Account" },
-      { value: "billing" as const, label: "Billing" },
-    ],
+    () => [{ value: "account" as const, label: "Account" }],
     []
   );
 

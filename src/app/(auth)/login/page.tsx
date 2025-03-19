@@ -4,8 +4,7 @@ import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { GithubIcon, Loader2, Mail, GalleryVerticalEnd } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
+import { GithubIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 

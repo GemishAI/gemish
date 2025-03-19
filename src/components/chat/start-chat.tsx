@@ -8,7 +8,12 @@ import { useChat } from "@/providers/chat-provider";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatInput } from "./chat-input";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
-import { BrainIcon } from "lucide-react";
+import {
+  GlobeIcon,
+  CodeIcon,
+  PaintbrushIcon,
+  NotebookTextIcon,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function StartChat() {
@@ -119,11 +124,11 @@ export function StartChat() {
 
   // Get a flattened list of all suggestions for default view
   const defaultSuggestions =
-    activeCategory === ""
-      ? suggestionGroups.flatMap(
-          (group) => group.items.slice(0, 1) // Take first item from each category for default view
-        )
-      : [];
+    activeCategory === "" ?
+      suggestionGroups.flatMap(
+        (group) => group.items.slice(0, 1) // Take first item from each category for default view
+      )
+    : [];
 
   // Render suggestion item with separator
   const renderSuggestionItem = (
@@ -193,12 +198,14 @@ export function StartChat() {
                 <PromptSuggestion
                   onClick={() => toggleCategory(suggestion.label)}
                   className={`capitalize ${
-                    activeCategory === suggestion.label
-                      ? "bg-blue-100 dark:bg-blue-700 border-blue-400 dark:border-blue-800 text-blue-800 dark:text-blue-50"
-                      : ""
+                    activeCategory === suggestion.label ?
+                      "bg-blue-100 dark:bg-blue-700 border-blue-400 dark:border-blue-800 text-blue-800 dark:text-blue-50"
+                    : ""
                   }`}
                 >
-                  <BrainIcon className="mr-2 h-4 w-4" />
+                  {suggestion.icon && (
+                    <suggestion.icon className="mr-2 h-4 w-4" />
+                  )}
                   {suggestion.label}
                 </PromptSuggestion>
               </motion.div>
@@ -207,7 +214,7 @@ export function StartChat() {
 
           {/* Show category-specific suggestions when a category is active */}
           <AnimatePresence mode="wait">
-            {activeCategory ? (
+            {activeCategory ?
               <motion.div
                 key="active-category"
                 className="flex w-full flex-col mt-2"
@@ -225,8 +232,7 @@ export function StartChat() {
                   )
                 )}
               </motion.div>
-            ) : (
-              <motion.div
+            : <motion.div
                 key="default-suggestions"
                 className="flex w-full flex-col mt-2"
                 initial={{ opacity: 0, height: 0 }}
@@ -245,7 +251,7 @@ export function StartChat() {
                   );
                 })}
               </motion.div>
-            )}
+            }
           </AnimatePresence>
         </motion.div>
       </motion.div>
@@ -280,6 +286,7 @@ export function StartChat() {
 const suggestionGroups = [
   {
     label: "Quick Summaries",
+    icon: NotebookTextIcon,
     highlight: "Summarize Instantly",
     items: [
       "Get a document summary",
@@ -290,6 +297,7 @@ const suggestionGroups = [
   },
   {
     label: "Code Assistance",
+    icon: CodeIcon,
     highlight: "Code Smarter",
     items: [
       "Generate React components",
@@ -300,6 +308,7 @@ const suggestionGroups = [
   },
   {
     label: "Design & Create",
+    icon: PaintbrushIcon,
     highlight: "Design in Seconds",
     items: [
       "Create a logo concept",
@@ -310,6 +319,7 @@ const suggestionGroups = [
   },
   {
     label: "In-Depth Research",
+    icon: GlobeIcon,
     highlight: "Research with Precision",
     items: [
       "Discover SEO best practices",

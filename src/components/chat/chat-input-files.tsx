@@ -4,14 +4,8 @@ import { FileText, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { useChat } from "@/providers/chat-provider";
 
-export function ChatInputFiles({
-  fileList,
-  removeFile,
-}: {
-  fileList: File[];
-  removeFile: (file: File) => void;
-}) {
-  const { fileUploads } = useChat();
+export function ChatInputFiles() {
+  const { fileUploads, fileList, removeFile } = useChat();
 
   // Function to render circular progress
   const CircularProgress = ({ progress }: { progress: number }) => {
@@ -87,7 +81,7 @@ export function ChatInputFiles({
             >
               {/* Left: Image or File Icon with potential progress overlay */}
               <div className="flex-shrink-0 mr-3 relative">
-                {file.type.startsWith("image/") ? (
+                {file.type.startsWith("image/") ?
                   <div className="relative w-10 h-10 rounded-md overflow-hidden">
                     <Image
                       src={URL.createObjectURL(file)}
@@ -99,14 +93,13 @@ export function ChatInputFiles({
                       <CircularProgress progress={uploadStatus.progress} />
                     )}
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center w-10 h-10 relative">
+                : <div className="flex items-center justify-center w-10 h-10 relative">
                     <FileText className="h-6 w-6 text-muted-foreground" />
                     {isUploading && uploadStatus && (
                       <CircularProgress progress={uploadStatus.progress} />
                     )}
                   </div>
-                )}
+                }
 
                 {/* Success indicator */}
                 {isSuccess && (
@@ -150,21 +143,20 @@ export function ChatInputFiles({
               {/* Right: File Information */}
               <div className="flex-grow min-w-0 max-w-32">
                 <p className="text-sm font-medium truncate" title={file.name}>
-                  {file.name.length > 15
-                    ? `${file.name.slice(0, 13)}...`
-                    : file.name}
+                  {file.name.length > 15 ?
+                    `${file.name.slice(0, 13)}...`
+                  : file.name}
                 </p>
-                {isUploading ? (
+                {isUploading ?
                   <p className="text-xs text-blue-500">Uploading...</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground flex items-center">
+                : <p className="text-xs text-muted-foreground flex items-center">
                     <span>{(file.size / 1024).toFixed(1)} KB</span>
                     <span className="mx-1">•</span>
                     <span>
                       {file.type.split("/")[1]?.toUpperCase() || "FILE"}
                     </span>
                   </p>
-                )}
+                }
 
                 {isError && uploadStatus?.error && (
                   <p
