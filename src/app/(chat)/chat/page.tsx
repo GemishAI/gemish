@@ -19,8 +19,6 @@ import { useChats } from "@/hooks/use-chats";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ChatPage() {
-  const [isRetrying, startTransition] = useTransition();
-  const { isLoading, data, error, mutate } = useChats({ limit: "6" });
   const { setActiveChat } = useChat();
   const [showMoreOptions, setShowMoreOptions] = useState(true);
 
@@ -29,139 +27,9 @@ export default function ChatPage() {
     setActiveChat(null);
   }, [setActiveChat]);
 
-  const formatDate = (date: Date) => {
-    const hello = new Date(date);
-    const formatted = formatDistanceToNow(hello, { addSuffix: true });
-    return formatted;
-  };
-
-  const handleRetry = () => {
-    startTransition(() => {
-      mutate();
-    });
-  };
-
   return (
-    <div className="flex flex-col gap-10 pt-24 max-w-[725px] mx-auto w-full min-h-screen">
-      <div>
-        <StartChat />
-      </div>
-      {(isLoading || isRetrying) && (
-        <div className="flex flex-col gap-5 w-full">
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
-              <Skeleton className="size-4" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="size-4" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="size-4" />
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-3 grid-cols-1 gap-3 w-full">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="flex flex-col gap-4 py-4 px-4 h-40 rounded-xl border"
-              >
-                <Skeleton className="size-4" />
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/3" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {error && !isRetrying && (
-        <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-          <h3 className="font-medium text-lg">Unable to load conversations</h3>
-          <Button
-            onClick={handleRetry}
-            size="sm"
-            variant="outline"
-            className="mt-1 flex items-center gap-1"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Try again</span>
-          </Button>
-        </div>
-      )}
-      {data && !error && !isLoading ?
-        <div className="flex flex-col gap-5 w-full">
-          <div className="flex justify-between items-center w-full">
-            <div
-              className="flex items-center gap-2 cursor-pointer justify-center lg:text-sm text-xs"
-              onClick={() => setShowMoreOptions(!showMoreOptions)}
-            >
-              <MessageSquare className="lg:size-4 size-3" />
-              Your recent chats
-              <motion.div
-                animate={{ rotate: showMoreOptions ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown size={16} />
-              </motion.div>
-            </div>
-
-            <Link
-              className="flex items-center hover:underline lg:text-sm text-xs"
-              href="/recents"
-            >
-              View All
-              <ArrowRight className="ml-2 lg:size-4 size-3" />
-            </Link>
-          </div>
-
-          <AnimatePresence>
-            {showMoreOptions && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{
-                  height: {
-                    duration: 0.3,
-                    ease: "easeInOut",
-                  },
-                  opacity: {
-                    duration: 0.2,
-                    ease: "easeInOut",
-                  },
-                }}
-                className="grid lg:grid-cols-3 grid-cols-1 gap-3 overflow-hidden w-full"
-              >
-                {data.chats && data.chats.length > 0 ?
-                  data.chats.map((chat: Chat) => (
-                    <motion.div key={chat.id}>
-                      <Link
-                        href={`/chat/${chat.id}`}
-                        className="flex flex-col justify-between shadow-xs lg:p-4 p-3.5 lg:h-40 h-32 hover:bg-muted/50 transition-all cursor-pointer ease-in-out hover:shadow-sm rounded-xl border border-primay/50"
-                      >
-                        <MessageSquare className="lg:size-4 size-3" />
-                        <h1 className="lg:text-lg text-sm font-medium truncate w-full text-balance">
-                          {chat.title}
-                        </h1>
-                        <p className="lg:text-sm text-xs">
-                          {formatDate(chat.updatedAt)}
-                        </p>
-                      </Link>
-                    </motion.div>
-                  ))
-                : <div className="col-span-3 text-center py-6">
-                    No recent chats found
-                  </div>
-                }
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      : !error &&
-        !isLoading && (
-          <div className="text-center py-4">No chats to display</div>
-        )
-      }
+    <div className="flex flex-col gap-10 pt-24  w-full min-h-screen">
+      <StartChat />
     </div>
   );
 }

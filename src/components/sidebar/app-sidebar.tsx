@@ -25,13 +25,13 @@ export function AppSidebar() {
     navMain: [
       {
         title: "Start new chat",
-        url: "/",
+        url: "/chat",
         icon: MessageCirclePlus,
         isActive: isActive("/"),
       },
       {
         title: "Chats",
-        url: "/recents",
+        url: "/chat/recents",
         icon: MessagesSquare,
         isActive: isActive("/recents"),
       },

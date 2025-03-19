@@ -34,7 +34,7 @@ export default function RootLayout({
                   Gemish
                 </Link>
                 <Button className="rounded-full " asChild>
-                  <Link href="/login">Login</Link>
+                  <Link href="/login">Sign In</Link>
                 </Button>
               </nav>
             </div>
@@ -42,7 +42,7 @@ export default function RootLayout({
 
           {/* Main Content */}
           <main className="flex w-full min-h-screen pt-16 pb-20">
-            <div className="container mx-auto h-full">{children}</div>
+            <div className=" mx-auto h-full">{children}</div>
           </main>
 
           {/* Footer */}

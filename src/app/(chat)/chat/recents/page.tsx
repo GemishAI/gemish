@@ -171,11 +171,11 @@ export default function RecentsPage() {
   );
 
   return (
-    <div className="flex h-full flex-col lg:px-4 lg:py-8 pt-20 gap-5 max-w-[725px] mx-auto w-full">
+    <div className="flex h-full flex-col lg:px-4 lg:py-8 pt-20 gap-5  w-full">
       <div className="w-full flex items-center justify-between">
         <h1 className="text-2xl lg:text-3xl font-medium">Chats</h1>
         <Button asChild>
-          <Link href="/">
+          <Link href="/chat">
             <PlusIcon />
             New chat
           </Link>
@@ -218,16 +218,18 @@ export default function RecentsPage() {
             disabled={isRetrying}
             className="gap-2"
           >
-            {isRetrying ?
+            {isRetrying ? (
               <LoaderSpinner />
-            : <RefreshCcw className="h-4 w-4" />}
+            ) : (
+              <RefreshCcw className="h-4 w-4" />
+            )}
             Try again
           </Button>
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto">
-        {isLoading ?
+        {isLoading ? (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
               <div
@@ -244,19 +246,20 @@ export default function RecentsPage() {
               </div>
             ))}
           </div>
-        : filteredChats.length === 0 ?
+        ) : filteredChats.length === 0 ? (
           <div className="flex h-32 flex-col items-center justify-center gap-2 p-4 text-center">
             <MessageSquareIcon className="h-8 w-8 text-muted-foreground" />
             <div className="space-y-1">
               <p className="font-medium">No chats found</p>
               <p className="text-sm text-muted-foreground">
-                {searchQuery ?
-                  "Try a different search term"
-                : "Start a new chat to get started"}
+                {searchQuery
+                  ? "Try a different search term"
+                  : "Start a new chat to get started"}
               </p>
             </div>
           </div>
-        : <div className="space-y-4">
+        ) : (
+          <div className="space-y-4">
             {filteredChats.map((chat) => (
               <Link
                 key={chat.id}
@@ -323,13 +326,11 @@ export default function RecentsPage() {
                 onClick={loadMore}
                 disabled={isValidating}
               >
-                {isValidating ?
-                  <LoaderSpinner />
-                : "Load more"}
+                {isValidating ? <LoaderSpinner /> : "Load more"}
               </Button>
             )}
           </div>
-        }
+        )}
       </div>
 
       <Dialog
@@ -357,9 +358,7 @@ export default function RecentsPage() {
               onClick={() => chatToDelete && handleDelete(chatToDelete)}
               disabled={isDeleting}
             >
-              {isDeleting ?
-                <LoaderSpinner />
-              : "Delete"}
+              {isDeleting ? <LoaderSpinner /> : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -390,9 +389,7 @@ export default function RecentsPage() {
               onClick={() => chatToRename && handleRename(chatToRename)}
               disabled={isRenaming || !newTitle.trim()}
             >
-              {isRenaming ?
-                <LoaderSpinner />
-              : "Save"}
+              {isRenaming ? <LoaderSpinner /> : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

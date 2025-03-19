@@ -18,7 +18,9 @@ export async function SidebarProviderWrapper({
       <ClosedNav />
       <SidebarInset>
         <MobileNav />
-        <div className="flex  flex-col  p-4 pt-0 w-full h-full">{children}</div>
+        <div className="flex  max-w-[825px] mx-auto flex-col w-full h-full">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

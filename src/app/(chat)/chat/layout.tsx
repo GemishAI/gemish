@@ -13,11 +13,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={cn(
-          inter.variable,
-          urbanist.variable,
-          "antialiased h-full w-full"
-        )}
+        className={cn(inter.variable, urbanist.variable, "antialiased w-full")}
       >
         <ChatProviders>{children}</ChatProviders>
       </body>

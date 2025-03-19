@@ -55,7 +55,7 @@ export function ChatInput({
       )}
       <PromptInputTextarea
         placeholder="Ask anything..."
-        className="min-h-[55px]"
+        className="min-h-[55px] dark:text-white text-white"
         onKeyDown={handleKeyDown}
         disabled={status !== "ready"}
       />
@@ -76,7 +76,7 @@ export function ChatInput({
                 multiple
                 ref={fileInputRef}
               />
-              <Paperclip className="text-primary size-5" />
+              <Paperclip className=" size-5" />
             </Button>
           </PromptInputAction>
 
@@ -85,7 +85,7 @@ export function ChatInput({
             variant={"outline"}
             className="lg:h-9 h-8 lg:text-sm text-xs w-fit rounded-full "
           >
-            <Globe className="text-primary lg:size-5 size-4" />
+            <Globe className=" lg:size-5 size-4" />
             Search
           </Button>
 
@@ -94,7 +94,7 @@ export function ChatInput({
             variant={"outline"}
             className="lg:h-9 h-8 lg:text-sm text-xs w-fit rounded-full"
           >
-            <Brain className="text-primary lg:size-5 size-4" />
+            <Brain className=" lg:size-5 size-4" />
             Think
           </Button>
         </div>
@@ -102,13 +102,14 @@ export function ChatInput({
         <div className="flex items-center gap-2">
           <PromptInputAction
             tooltip={
-              status === "submitted" ? "Submitting..."
-              : status === "streaming" ?
-                "Stop generating"
-              : "Send message"
+              status === "submitted"
+                ? "Submitting..."
+                : status === "streaming"
+                  ? "Stop generating"
+                  : "Send message"
             }
           >
-            {status === "submitted" ?
+            {status === "submitted" ? (
               <Button
                 size="sm"
                 className="lg:h-9 lg:w-9 h-8 w-8 rounded-full"
@@ -116,11 +117,12 @@ export function ChatInput({
               >
                 <Loader2Icon className="lg:size-5 size-4 animate-spin" />
               </Button>
-            : status === "streaming" ?
+            ) : status === "streaming" ? (
               <Button size="sm" className="h-9 w-9 rounded-full" onClick={stop}>
                 <Square className="lg:size-4 size-3 fill-current" />
               </Button>
-            : <Button
+            ) : (
+              <Button
                 size="sm"
                 className="lg:h-9 lg:w-9 h-8 w-8 rounded-full"
                 onClick={handleSend}
@@ -128,7 +130,7 @@ export function ChatInput({
               >
                 <ArrowUpIcon className="lg:size-5 size-4" />
               </Button>
-            }
+            )}
           </PromptInputAction>
         </div>
       </PromptInputActions>

@@ -79,45 +79,44 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
   );
 
   return (
-    <div className="w-full h-screen flex flex-col">
-      {isChatLoading ?
+    <div className="w-full h-screen flex flex-col overflow-hidden">
+      {isChatLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <LoaderSpinner width="20" height="20" />
         </div>
-      : <>
-          <div className="flex h-screen w-full flex-col overflow-hidden">
-            <ChatContainer ref={containerRef} className="space-y-8 flex-1 p-5">
-              {messages.map((message) => (
-                <MessageComponent
-                  key={message.id}
-                  className={
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }
-                >
-                  {message.role === "assistant" && (
-                    <MessageAvatar
-                      src="/avatars/gemini.png"
-                      alt="AI"
-                      fallback="AI"
-                    />
-                  )}
-                  {message.role === "user" ?
-                    <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
-                      {message.content}
-                    </MessageContent>
-                  : <ChatMarkdown content={message.content} />}
-                </MessageComponent>
-              ))}
+      ) : (
+        <ChatContainer ref={containerRef} className="space-y-8 flex-1 py-5">
+          {messages.map((message) => (
+            <MessageComponent
+              key={message.id}
+              className={
+                message.role === "user" ? "justify-end" : "justify-start"
+              }
+            >
+              {message.role === "assistant" && (
+                <MessageAvatar
+                  src="/avatars/gemini.png"
+                  alt="AI"
+                  fallback="AI"
+                />
+              )}
+              {message.role === "user" ? (
+                <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
+                  {message.content}
+                </MessageContent>
+              ) : (
+                <ChatMarkdown content={message.content} />
+              )}
+            </MessageComponent>
+          ))}
 
-              <AIErrorMessage error={error} reload={reload} />
+          <AIErrorMessage error={error} reload={reload} />
 
-              <AILoading status={status} messages={messages} />
-            </ChatContainer>
-          </div>
-        </>
-      }
-      <div className="w-full bg-background sticky bottom-0 z-10 inset-x-0">
-        <div className="max-w-3xl w-full mx-auto px-4">
+          <AILoading status={status} messages={messages} />
+        </ChatContainer>
+      )}
+      <div className="w-full bg-background sticky bottom-0 z-10 inset-x-0 pb-4">
+        <div className="w-full">
           <ChatInput
             input={input}
             handleKeyDown={handleKeyDown}

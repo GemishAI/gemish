@@ -2,14 +2,25 @@ import "@/styles/globals.css";
 import { AuthProviders } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { Metadata } from "next";
 
-export { authMetadata } from "@/config/metadata";
+export const metadata: Metadata = {
+  title: "Sign In - Gemish",
+  description: "Sign In to Gemish to get the most out of it.",
+};
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (session) redirect("/chat");
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
