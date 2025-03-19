@@ -15,6 +15,7 @@ import { ChatInput } from "./chat-input";
 import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
+import { motion, AnimatePresence } from "motion/react";
 
 interface ChatInterfaceProps {
   id: string;
@@ -79,43 +80,115 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
   );
 
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden">
+    <motion.div
+      className="w-full h-screen flex flex-col overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {isChatLoading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <motion.div
+          className="flex-1 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <LoaderSpinner width="20" height="20" />
-        </div>
+        </motion.div>
       ) : (
         <ChatContainer ref={containerRef} className="space-y-8 flex-1 py-5">
-          {messages.map((message) => (
-            <MessageComponent
-              key={message.id}
-              className={
-                message.role === "user" ? "justify-end" : "justify-start"
-              }
-            >
-              {message.role === "assistant" && (
-                <MessageAvatar
-                  src="/avatars/gemini.png"
-                  alt="AI"
-                  fallback="AI"
-                />
-              )}
-              {message.role === "user" ? (
-                <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
-                  {message.content}
-                </MessageContent>
-              ) : (
-                <ChatMarkdown content={message.content} />
-              )}
-            </MessageComponent>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{
+                  duration: 0.4,
+                  delay: index * 0.1 > 0.5 ? 0.5 : index * 0.1, // Cap delay at 0.5s
+                }}
+              >
+                <MessageComponent
+                  className={
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }
+                >
+                  {message.role === "assistant" && (
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <MessageAvatar
+                        src="/avatars/gemini.png"
+                        alt="AI"
+                        fallback="AI"
+                      />
+                    </motion.div>
+                  )}
+                  {message.role === "user" ? (
+                    <motion.div
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <MessageContent className="h-fit bg-secondary text-foreground py-2 px-4 max-w-[80%] rounded-xl">
+                        {message.content}
+                      </MessageContent>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{
+                        duration: 0.4,
+                        type: "spring",
+                        stiffness: 100,
+                      }}
+                    >
+                      <ChatMarkdown content={message.content} />
+                    </motion.div>
+                  )}
+                </MessageComponent>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-          <AIErrorMessage error={error} reload={reload} />
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AIErrorMessage error={error} reload={reload} />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <AILoading status={status} messages={messages} />
+          <AnimatePresence>
+            {status === "loading" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AILoading status={status} messages={messages} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </ChatContainer>
       )}
-      <div className="w-full bg-background sticky bottom-0 z-10 inset-x-0 pb-4">
+      <motion.div
+        className="w-full bg-background sticky bottom-0 z-10 inset-x-0 pb-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
         <div className="w-full">
           <ChatInput
             input={input}
@@ -130,7 +203,20 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
             removeFile={removeFile}
           />
         </div>
-      </div>
-    </div>
+        <AnimatePresence>
+          {messages.length > 4 && (
+            <motion.div
+              className="flex justify-center mt-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ScrollButton containerRef={containerRef} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 }
