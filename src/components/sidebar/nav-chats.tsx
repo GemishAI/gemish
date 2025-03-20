@@ -172,7 +172,7 @@ export function NavChats() {
                         isActive={isActive(`/chat/c/${chat.id}`)}
                         className={cn(
                           "rounded-md",
-                          isActive(`/chat/${chat.id}`) && "bg-black/50"
+                          isActive(`/chat/c/${chat.id}`) && "bg-black/50"
                         )}
                       >
                         <Link href={`/chat/c/${chat.id}`}>

@@ -27,13 +27,13 @@ export function AppSidebar() {
         title: "Start new chat",
         url: "/chat",
         icon: MessageCirclePlus,
-        isActive: isActive("/"),
+        isActive: isActive("/chat"),
       },
       {
         title: "Chats",
         url: "/chat/recents",
         icon: MessagesSquare,
-        isActive: isActive("/recents"),
+        isActive: isActive("/chat/recents"),
       },
     ],
   };

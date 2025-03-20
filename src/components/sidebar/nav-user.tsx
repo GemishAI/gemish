@@ -119,7 +119,7 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/settings?nav=account">
+                <Link href="/chat/settings?nav=account">
                   <Settings />
                   Settings
                 </Link>

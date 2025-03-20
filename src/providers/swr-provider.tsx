@@ -35,33 +35,54 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
       reconnectAttempts.current += 1;
 
       // Create a promise for the reconnection attempt
-      toast.promise(
-        fetch("/api/health-check", {
-          method: "HEAD",
-          cache: "no-store",
-        })
-          .then((res) => {
-            if (res.ok) return true;
-            throw new Error("Connection failed");
+      const reconnectionPromise = new Promise<boolean>((resolve, reject) => {
+        const checkConnection = () => {
+          fetch("/api/health-check", {
+            method: "HEAD",
+            cache: "no-store",
           })
-          .catch(() => {
-            // Schedule next retry with exponential backoff (capped at 30s)
-            const backoffTime = Math.min(
-              2000 * Math.pow(1.5, reconnectAttempts.current - 1),
-              30000
-            );
-            retryTimerRef.current = setTimeout(attemptReconnect, backoffTime);
-            throw new Error("Connection failed");
-          }),
-        {
-          loading: (
-            <ToastMessage message="Connection lost. Attempting to reconnect..." />
-          ),
-          success: <ToastMessage message="Connection restored" />,
-          id: "network-status",
-          duration: Infinity,
-        }
-      );
+            .then((res) => {
+              if (res.ok) resolve(true);
+              else {
+                // Schedule next retry with exponential backoff (capped at 30s)
+                const backoffTime = Math.min(
+                  2000 * Math.pow(1.5, reconnectAttempts.current - 1),
+                  30000
+                );
+                retryTimerRef.current = setTimeout(() => {
+                  reconnectAttempts.current += 1;
+                  checkConnection();
+                }, backoffTime);
+
+                // Don't reject here - keep the promise pending
+              }
+            })
+            .catch(() => {
+              // Schedule next retry with exponential backoff (capped at 30s)
+              const backoffTime = Math.min(
+                2000 * Math.pow(1.5, reconnectAttempts.current - 1),
+                30000
+              );
+              retryTimerRef.current = setTimeout(() => {
+                reconnectAttempts.current += 1;
+                checkConnection();
+              }, backoffTime);
+
+              // Don't reject here - keep the promise pending
+            });
+        };
+
+        checkConnection();
+      });
+
+      toast.promise(reconnectionPromise, {
+        loading: (
+          <ToastMessage message="Connection lost. Attempting to reconnect..." />
+        ),
+        success: <ToastMessage message="Connection restored" />,
+        id: "network-status",
+        duration: Infinity,
+      });
     }
   }, []);
 
@@ -71,17 +92,8 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
       isReconnecting.current = true;
       reconnectAttempts.current = 0;
 
-      // Show immediate notification for connection loss
-      toast.loading(
-        <ToastMessage message="Connection lost. Attempting to reconnect..." />,
-        {
-          id: "network-status",
-          duration: Infinity,
-        }
-      );
-
-      // Start first reconnection attempt after a short delay
-      retryTimerRef.current = setTimeout(attemptReconnect, 2000);
+      // Start reconnection process immediately
+      attemptReconnect();
     }
   }, [attemptReconnect]);
 

@@ -28,9 +28,7 @@ type ToolInvocationUIPart = {
     state: "partial-call" | "call" | "result";
     toolCallId: string;
     toolName: string;
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     args: any;
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     result?: any;
   };
 };

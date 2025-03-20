@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
 import { NuqsAdapterProvider } from "./nuqs-adapter-provider";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "./theme-provider";
 import { SidebarProviderWrapper } from "@/components/sidebar/sidebar-provider-wrapper";
 import { ChatProvider } from "./chat-provider";
@@ -20,7 +19,6 @@ export function ChatProviders({ children }: { children: React.ReactNode }) {
             <NuqsAdapterProvider>
               {children}
               <Toaster richColors />
-              <Analytics mode="production" />
             </NuqsAdapterProvider>
           </SidebarProviderWrapper>
         </ChatProvider>
@@ -40,7 +38,6 @@ export function HomeProviders({ children }: { children: React.ReactNode }) {
       <NuqsAdapterProvider>
         {children}
         <Toaster richColors />
-        <Analytics mode="production" />
       </NuqsAdapterProvider>
     </ThemeProvider>
   );
@@ -57,7 +54,6 @@ export function AuthProviders({ children }: { children: React.ReactNode }) {
     >
       {children}
       <Toaster richColors />
-      <Analytics mode="production" />
     </ThemeProvider>
   );
 }

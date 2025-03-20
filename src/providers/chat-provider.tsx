@@ -125,16 +125,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages,
     error,
   } = useAIChat({
+    id: activeChat || undefined,
     api: apiUrl,
     initialMessages: initialMessages(),
     credentials: "include",
-    body: {
-      model, // Include model in all requests
-      id: activeChat || undefined,
-    },
-    headers: {
-      "Content-Type": "application/json",
-    },
+    generateId: createIdGenerator({
+      prefix: "msgc",
+      size: 16,
+    }),
     experimental_prepareRequestBody: useCallback(
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
