@@ -137,22 +137,6 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
 
   // Define the SWR configuration with proper types
   const swrConfig: SWRConfiguration = {
-    fetcher: async (resource: string, init?: RequestInit) => {
-      try {
-        const res = await fetch(resource, init);
-
-        if (!res.ok) {
-          const error = new Error(`API error: ${res.status}`);
-          (error as any).status = res.status;
-          throw error;
-        }
-
-        return res.json();
-      } catch (error) {
-        // Network errors will be handled by the offline detection
-        throw error;
-      }
-    },
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: true,
