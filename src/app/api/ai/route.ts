@@ -88,10 +88,6 @@ export async function POST(req: Request) {
         delayInMs: 25,
         chunking: "word",
       }),
-      experimental_generateMessageId: createIdGenerator({
-        prefix: "msgs",
-        size: 16,
-      }),
       async onFinish({ response }) {
         await saveChat({
           id,

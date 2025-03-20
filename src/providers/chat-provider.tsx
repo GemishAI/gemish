@@ -133,10 +133,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     body: {
       model, // Include model in all requests
     },
-    generateId: createIdGenerator({
-      prefix: "msgc",
-      size: 16,
-    }),
     headers: {
       "Content-Type": "application/json",
     },
