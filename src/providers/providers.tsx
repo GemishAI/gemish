@@ -13,16 +13,16 @@ export function ChatProviders({ children }: { children: React.ReactNode }) {
       defaultTheme="system"
       enableSystem
     >
-      <SWRProvider>
-        <ChatProvider>
+      <ChatProvider>
+        <SWRProvider>
           <SidebarProviderWrapper>
             <NuqsAdapterProvider>
               {children}
               <Toaster richColors />
             </NuqsAdapterProvider>
           </SidebarProviderWrapper>
-        </ChatProvider>
-      </SWRProvider>
+        </SWRProvider>
+      </ChatProvider>
     </ThemeProvider>
   );
 }

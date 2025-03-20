@@ -18,6 +18,8 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
   // Memoize the reconnection attempt function
   const attemptReconnect = useCallback(() => {
     // Only run this if we're offline
+    fetcher: (resource: RequestInfo, init: RequestInit) =>
+      fetch(resource, init).then((res) => res.json());
     if (!navigator.onLine && isReconnecting.current) {
       reconnectAttempts.current += 1;
 
