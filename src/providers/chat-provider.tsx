@@ -103,15 +103,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   } = useModel();
 
   // Memoize initial messages to prevent unnecessary recreations
-  const initialMessages = () => {
+  const initialMessages = useCallback(() => {
     if (!activeChat || !chats[activeChat]) return [];
     return chats[activeChat];
-  };
-
-  const apiUrl =
-    process.env.NODE_ENV === "development" ?
-      "http://localhost:3000"
-    : "https://gemish.vercel.app/api/ai";
+  }, [activeChat, chats]);
 
   // Enhanced AI chat hook with improved request preparation
   const {
@@ -126,56 +121,57 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     error,
   } = useAIChat({
     id: activeChat || undefined,
-    api: apiUrl,
+    api: "/api/ai",
     initialMessages: initialMessages(),
     credentials: "include",
+    sendExtraMessageFields: true,
     generateId: createIdGenerator({
       prefix: "msgc",
       size: 16,
     }),
-    experimental_prepareRequestBody: ({
-      messages,
-      id,
-    }: {
-      messages: Message[];
-      id: string;
-    }) => {
-      // If we have a pending message for the active chat, prioritize it
-      if (id && pendingMessages[id]) {
-        return { message: pendingMessages[id], id, model };
-      }
+    experimental_prepareRequestBody: useCallback(
+      ({ messages, id }: { messages: Message[]; id: string }) => {
+        // If we have a pending message for the active chat, prioritize it
+        if (id && pendingMessages[id]) {
+          return { message: pendingMessages[id], id, model };
+        }
 
-      // Otherwise, send the last message in the conversation
-      if (messages.length > 0) {
-        return { message: messages[messages.length - 1], id, model };
-      }
+        // Otherwise, send the last message in the conversation
+        if (messages.length > 0) {
+          return { message: messages[messages.length - 1], id, model };
+        }
 
-      // Fallback for empty conversations
-      return { messages, id, model };
-    },
-    onFinish: (message: Message) => {
-      if (!activeChat) return;
+        // Fallback for empty conversations
+        return { messages, id, model };
+      },
+      [pendingMessages, model]
+    ),
+    onFinish: useCallback(
+      (message: Message) => {
+        if (!activeChat) return;
 
-      setChats((prev) => {
-        const currentMessages = prev[activeChat] || [];
-        return {
-          ...prev,
-          [activeChat]: [...currentMessages, message],
-        };
-      });
+        setChats((prev) => {
+          const currentMessages = prev[activeChat] || [];
+          return {
+            ...prev,
+            [activeChat]: [...currentMessages, message],
+          };
+        });
 
-      // Clear pending status
-      setPendingMessages((prev) => {
-        if (!prev[activeChat]) return prev;
+        // Clear pending status
+        setPendingMessages((prev) => {
+          if (!prev[activeChat]) return prev;
 
-        const newPending = { ...prev };
-        delete newPending[activeChat];
-        return newPending;
-      });
+          const newPending = { ...prev };
+          delete newPending[activeChat];
+          return newPending;
+        });
 
-      // Reset the trigger flag
-      needsAiResponse.current = false;
-    },
+        // Reset the trigger flag
+        needsAiResponse.current = false;
+      },
+      [activeChat]
+    ),
   });
 
   // Create a new chat with an initial message - debounced to prevent accidental double creation
@@ -187,6 +183,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         role: "user",
         content: initialMessage,
         createdAt: new Date(),
+        experimental_attachments:
+          (currentAttachments.length > 0 && currentAttachments) || [],
+        annotations: [],
+        parts: [
+          {
+            type: "text",
+            text: initialMessage,
+          },
+        ],
       };
 
       needsAiResponse.current = true;

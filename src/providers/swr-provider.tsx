@@ -4,23 +4,10 @@ import { useSWRConfig, SWRConfig, type SWRConfiguration } from "swr";
 import { toast } from "sonner";
 import { useEffect, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
 
 interface SWRProviderProps {
   children: ReactNode;
 }
-
-// Custom toast components with animations
-const ToastMessage = ({ message }: { message: string }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    transition={{ duration: 0.3 }}
-  >
-    {message}
-  </motion.div>
-);
 
 export const SWRProvider = ({ children }: SWRProviderProps) => {
   const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -76,10 +63,8 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
       });
 
       toast.promise(reconnectionPromise, {
-        loading: (
-          <ToastMessage message="Connection lost. Attempting to reconnect..." />
-        ),
-        success: <ToastMessage message="Connection restored" />,
+        loading: "Connection lost. Attempting to reconnect...",
+        success: "Connection restored",
         id: "network-status",
         duration: Infinity,
       });
@@ -106,7 +91,7 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
       retryTimerRef.current = null;
     }
 
-    toast.success(<ToastMessage message="Connected to the internet" />, {
+    toast.success("Connected to the internet", {
       id: "network-status",
       duration: 3000,
     });
