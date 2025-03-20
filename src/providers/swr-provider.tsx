@@ -4,10 +4,23 @@ import { useSWRConfig, SWRConfig, type SWRConfiguration } from "swr";
 import { toast } from "sonner";
 import { useEffect, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface SWRProviderProps {
   children: ReactNode;
 }
+
+// Custom toast components with animations
+const ToastMessage = ({ message }: { message: string }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.3 }}
+  >
+    {message}
+  </motion.div>
+);
 
 export const SWRProvider = ({ children }: SWRProviderProps) => {
   const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -20,35 +33,37 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
     // Only run this if we're offline
     if (!navigator.onLine && isReconnecting.current) {
       reconnectAttempts.current += 1;
-      
-      // Update the toast with current attempt number
-      toast.loading(
-        `Reconnecting... (Attempt ${reconnectAttempts.current})`, 
-        { id: "network-status" }
-      );
-      
-      fetch("/api/health-check", {
-        method: "HEAD",
-        cache: "no-store",
-      })
-        .then((res) => {
-          if (res.ok) {
-            // Connection restored - will be handled by the online event
-            return;
-          }
-          throw new Error("Connection failed");
+
+      // Create a promise for the reconnection attempt
+      toast.promise(
+        fetch("/api/health-check", {
+          method: "HEAD",
+          cache: "no-store",
         })
-        .catch(() => {
-          // Schedule next retry with exponential backoff (capped at 30s)
-          const backoffTime = Math.min(2000 * Math.pow(1.5, reconnectAttempts.current - 1), 30000);
-          
-          toast.error(
-            `Unable to connect. Retrying in ${Math.round(backoffTime/1000)}s...`, 
-            { id: "network-status" }
-          );
-          
-          retryTimerRef.current = setTimeout(attemptReconnect, backoffTime);
-        });
+          .then((res) => {
+            if (res.ok) return true;
+            throw new Error("Connection failed");
+          })
+          .catch(() => {
+            // Schedule next retry with exponential backoff (capped at 30s)
+            const backoffTime = Math.min(
+              2000 * Math.pow(1.5, reconnectAttempts.current - 1),
+              30000
+            );
+            retryTimerRef.current = setTimeout(attemptReconnect, backoffTime);
+            throw new Error("Connection failed");
+          }),
+        {
+          loading: (
+            <ToastMessage message="Connection lost. Attempting to reconnect..." />
+          ),
+          success: (
+            <ToastMessage message="Connection restored" />
+          ),
+          id: "network-status",
+          duration: Infinity,
+        }
+      );
     }
   }, []);
 
@@ -57,11 +72,6 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
     if (!isReconnecting.current) {
       isReconnecting.current = true;
       reconnectAttempts.current = 0;
-
-      toast.error("Unable to connect to the internet", {
-        id: "network-status",
-        duration: Infinity,
-      });
 
       // Start first reconnection attempt after a short delay
       retryTimerRef.current = setTimeout(attemptReconnect, 2000);
@@ -77,10 +87,13 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
       retryTimerRef.current = null;
     }
 
-    toast.success("Connected to the internet", { 
-      id: "network-status", 
-      duration: 3000 
-    });
+    toast.success(
+      <ToastMessage message="Connected to the internet" />,
+      {
+        id: "network-status",
+        duration: 3000,
+      }
+    );
 
     // Revalidate all data
     mutate("", { revalidate: true });

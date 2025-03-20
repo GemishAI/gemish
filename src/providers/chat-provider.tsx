@@ -123,14 +123,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     api: "/api/ai",
     id: activeChat || undefined,
     initialMessages: initialMessages(),
-    sendExtraMessageFields: true,
     credentials: "include",
+    streamProtocol: "text",
     generateId: createIdGenerator({
       prefix: "msgc",
       separator: "_",
     }),
     body: {
       model, // Include model in all requests
+    },
+    headers: {
+      "Content-Type": "application/json",
     },
     experimental_prepareRequestBody: useCallback(
       ({ messages, id }: { messages: Message[]; id: string }) => {
