@@ -103,10 +103,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   } = useModel();
 
   // Memoize initial messages to prevent unnecessary recreations
-  const initialMessages = useCallback(() => {
+  const initialMessages = () => {
     if (!activeChat || !chats[activeChat]) return [];
     return chats[activeChat];
-  }, [activeChat, chats]);
+  };
 
   const apiUrl =
     process.env.NODE_ENV === "development" ?
@@ -133,49 +133,49 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       prefix: "msgc",
       size: 16,
     }),
-    experimental_prepareRequestBody: useCallback(
-      ({ messages, id }: { messages: Message[]; id: string }) => {
-        // If we have a pending message for the active chat, prioritize it
-        if (id && pendingMessages[id]) {
-          return { message: pendingMessages[id], id, model };
-        }
+    experimental_prepareRequestBody: ({
+      messages,
+      id,
+    }: {
+      messages: Message[];
+      id: string;
+    }) => {
+      // If we have a pending message for the active chat, prioritize it
+      if (id && pendingMessages[id]) {
+        return { message: pendingMessages[id], id, model };
+      }
 
-        // Otherwise, send the last message in the conversation
-        if (messages.length > 0) {
-          return { message: messages[messages.length - 1], id, model };
-        }
+      // Otherwise, send the last message in the conversation
+      if (messages.length > 0) {
+        return { message: messages[messages.length - 1], id, model };
+      }
 
-        // Fallback for empty conversations
-        return { messages, id, model };
-      },
-      [pendingMessages, model]
-    ),
-    onFinish: useCallback(
-      (message: Message) => {
-        if (!activeChat) return;
+      // Fallback for empty conversations
+      return { messages, id, model };
+    },
+    onFinish: (message: Message) => {
+      if (!activeChat) return;
 
-        setChats((prev) => {
-          const currentMessages = prev[activeChat] || [];
-          return {
-            ...prev,
-            [activeChat]: [...currentMessages, message],
-          };
-        });
+      setChats((prev) => {
+        const currentMessages = prev[activeChat] || [];
+        return {
+          ...prev,
+          [activeChat]: [...currentMessages, message],
+        };
+      });
 
-        // Clear pending status
-        setPendingMessages((prev) => {
-          if (!prev[activeChat]) return prev;
+      // Clear pending status
+      setPendingMessages((prev) => {
+        if (!prev[activeChat]) return prev;
 
-          const newPending = { ...prev };
-          delete newPending[activeChat];
-          return newPending;
-        });
+        const newPending = { ...prev };
+        delete newPending[activeChat];
+        return newPending;
+      });
 
-        // Reset the trigger flag
-        needsAiResponse.current = false;
-      },
-      [activeChat]
-    ),
+      // Reset the trigger flag
+      needsAiResponse.current = false;
+    },
   });
 
   // Create a new chat with an initial message - debounced to prevent accidental double creation
