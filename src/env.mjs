@@ -25,6 +25,8 @@ export const env = createEnv({
     POLAR_ACCESS_TOKEN: z.string().min(1),
     POLAR_WEBHOOK_SECRET: z.string().min(1),
     POLAR_SERVER: z.enum(["production", "sandbox"]),
+
+    CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().min(1),
   },
   client: {},
   runtimeEnv: {
@@ -34,6 +36,9 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 
     GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+
+    CLOUDFLARE_TURNSTILE_SECRET_KEY:
+      process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
 
     BETTER_AUTH_APP_NAME: process.env.BETTER_AUTH_APP_NAME,
     BETTER_AUTH_GITHUB_CLIENT_ID: process.env.BETTER_AUTH_GITHUB_CLIENT_ID,

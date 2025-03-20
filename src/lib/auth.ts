@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { env } from "../env.mjs";
 import { db } from "@/server/db";
+import { captcha } from "better-auth/plugins";
 
 const auth_prefix = env.BETTER_AUTH_REDIS_PREFIX;
 
@@ -73,4 +74,12 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       maxAge: 5 * 60,
     },
   },
+
+  plugins: [
+    captcha({
+      provider: "cloudflare-turnstile", // or "google-recaptcha"
+      secretKey: env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+      endpoints: ["/login"],
+    }),
+  ],
 });

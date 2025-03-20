@@ -173,7 +173,20 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.4 }}
       >
-        <div className="w-full"></div>
+        <div className="w-full">
+          <ChatInput
+            input={input}
+            handleKeyDown={handleKeyDown}
+            handleValueChange={handleValueChange}
+            handleSend={handleSend}
+            status={status}
+            stop={stop}
+            fileInputRef={fileInputRef}
+            handleFileChange={handleFileChange}
+            fileList={fileList}
+            removeFile={removeFile}
+          />
+        </div>
       </motion.div>
     </div>
   );

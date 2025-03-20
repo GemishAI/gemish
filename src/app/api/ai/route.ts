@@ -55,14 +55,7 @@ export async function POST(req: Request) {
     const previousMessages = await loadChatMessages(id);
 
     const messages = appendClientMessage({
-      messages:
-        (
-          !previousMessages?.length ||
-          previousMessages?.[0]?.content === "" ||
-          model === "search"
-        ) ?
-          []
-        : previousMessages,
+      messages: previousMessages[0].content === "" ? [] : previousMessages,
       message,
     });
 

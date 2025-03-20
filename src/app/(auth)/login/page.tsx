@@ -14,6 +14,7 @@ type Provider = (typeof providers)[number];
 export default function Login() {
   const router = useRouter();
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+  const turnstileToken = "0x4AAAAAABBxvHiCvz0rlP2q";
 
   async function handleSocialLogin(provider: Provider) {
     setLoadingProvider(provider);
@@ -21,6 +22,11 @@ export default function Login() {
       await signIn.social({
         provider,
         callbackURL: "/chat",
+        fetchOptions: {
+          headers: {
+            "x-captcha-response": turnstileToken,
+          },
+        },
       });
     } catch (error) {
       toast.error("Authentication failed. Please try again later.");
@@ -46,11 +52,9 @@ export default function Login() {
             disabled={loadingProvider !== null}
             size={"lg"}
           >
-            {loadingProvider === "github" ? (
+            {loadingProvider === "github" ?
               <Loader2 size={18} className="animate-spin mr-3" />
-            ) : (
-              <GithubIcon className="mr-3" size={18} />
-            )}
+            : <GithubIcon className="mr-3" size={18} />}
             Continue with GitHub
           </Button>
 
@@ -60,10 +64,9 @@ export default function Login() {
             disabled={loadingProvider !== null}
             size={"lg"}
           >
-            {loadingProvider === "google" ? (
+            {loadingProvider === "google" ?
               <Loader2 size={18} className="animate-spin mr-3" />
-            ) : (
-              <div className="mr-3">
+            : <div className="mr-3">
                 <svg
                   width="18"
                   height="18"
@@ -88,7 +91,7 @@ export default function Login() {
                   />
                 </svg>
               </div>
-            )}
+            }
             Continue with Google
           </Button>
         </div>

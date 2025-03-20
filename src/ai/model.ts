@@ -27,14 +27,9 @@ const defaultModel = wrapLanguageModel({
   middleware: cacheMiddleware,
 });
 
-const fastModel = wrapLanguageModel({
-  model: google("gemini-2.0-flash-lite-preview-02-05"),
-  middleware: cacheMiddleware,
-});
-
 export const gemish = customProvider({
   languageModels: {
-    fast: fastModel,
+    fast: google("gemini-2.0-flash-lite-preview-02-05"),
     normal: defaultModel,
     think: reasoningModel,
     search: searchModel,
