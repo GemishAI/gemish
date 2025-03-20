@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/server/db";
 import { chat, message } from "@/server/db/schema";
 import { headers } from "next/headers";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, ilike, count } from "drizzle-orm";
 import { generateText } from "ai";
 import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
 import { google } from "@ai-sdk/google";
@@ -42,19 +42,41 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const limit = Number.parseInt(searchParams.get("limit") || "20");
-  const offset = Number.parseInt(searchParams.get("offset") || "0");
+  const query = searchParams.get("query") || "";
+  const limit = parseInt(searchParams.get("limit") || "20", 10);
+  const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-  const chats = await db
-    .select()
+  const chats = await db.query.chat.findMany({
+    where: and(
+      eq(chat.userId, session.user.id),
+      ilike(chat.title, `%${query}%`)
+    ),
+    limit,
+    offset,
+    orderBy: desc(chat.updatedAt),
+  });
+
+  // Get the total count without limit and offset
+  const totalCountResult = await db
+    .select({ count: count() })
     .from(chat)
-    .where(eq(chat.userId, session.user.id))
-    .limit(limit)
-    .offset(offset)
-    .orderBy(desc(chat.updatedAt))
-    .execute();
+    .where(
+      and(eq(chat.userId, session.user.id), ilike(chat.title, `%${query}%`))
+    );
 
-  return NextResponse.json({ chats });
+  const totalCount = totalCountResult[0]?.count || 0;
+
+  // Calculate if there are more results
+  const hasMore = offset + chats.length < totalCount;
+
+  return NextResponse.json(
+    {
+      chats,
+      totalCount,
+      hasMore,
+    },
+    { status: 200 }
+  );
 }
 
 export async function POST(request: NextRequest) {

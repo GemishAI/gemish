@@ -14,14 +14,14 @@ import {
 } from "lucide-react";
 import type { Chat } from "@/server/db/schema";
 import { LoaderSpinner } from "@/components/loader-spinner";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { parseAsString, useQueryState } from "nuqs";
+import { useDebouncedCallback } from "use-debounce";
+import { useInView } from "react-intersection-observer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,11 +39,9 @@ import {
 } from "@/components/ui/dialog";
 import useSWRInfinite from "swr/infinite";
 import { formatDistanceToNow } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function RecentsPage() {
-  const router = useRouter();
   const pathname = usePathname();
 
   const [searchQuery, setSearchQuery] = useQueryState(
@@ -52,20 +50,30 @@ export default function RecentsPage() {
       shallow: false,
     })
   );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [chatToRename, setChatToRename] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [inputValue, setInputValue] = useState(searchQuery);
   const LIMIT = 20;
 
+  // For infinite scrolling
+  const { ref: loadMoreRef, inView } = useInView();
+
+  // Debounced search to avoid excessive API calls
+  const debouncedSearch = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+    // Reset infinite scroll when search query changes
+    setSize(1);
+  }, 500);
+
   const getKey = useCallback(
-    (index: number) => {
-      if (index === null) return null;
-      return `/api/chats?limit=${LIMIT}&offset=${index * LIMIT}${
-        searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""
+    (pageIndex: number) => {
+      if (pageIndex === null) return null;
+      return `/api/chats?limit=${LIMIT}&offset=${pageIndex * LIMIT}${
+        searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : ""
       }`;
     },
     [searchQuery]
@@ -79,49 +87,48 @@ export default function RecentsPage() {
     });
 
   const hasMore = useMemo(
-    () => data?.[data.length - 1]?.pagination?.hasMore || false,
+    () => data?.[data.length - 1]?.hasMore || false,
     [data]
   );
 
-  const chats: Chat[] = data ? data.flatMap((page) => page.chats) : [];
-
-  const filteredChats = useMemo(
-    () =>
-      chats
-        .filter((chat) =>
-          chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .map((chat) => ({
-          ...chat,
-          active: `/chat/${chat.id}` === pathname,
-        }))
-        .sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        ),
-    [chats, searchQuery, pathname]
+  const chats: Chat[] = useMemo(
+    () => (data ? data.flatMap((page) => page.chats) : []),
+    [data]
   );
 
-  const loadMore = useCallback(() => {
-    if (!isValidating && hasMore) {
+  const displayedChats = useMemo(
+    () =>
+      chats.map((chat) => ({
+        ...chat,
+        active: `/chat/c/${chat.id}` === pathname,
+      })),
+    [chats, pathname]
+  );
+
+  // Load more when scrolled to the bottom
+  useEffect(() => {
+    if (inView && !isValidating && hasMore) {
       setSize(size + 1);
     }
-  }, [isValidating, hasMore, size, setSize]);
+  }, [inView, isValidating, hasMore, setSize, size]);
 
-  useEffect(() => {
-    setSize(1);
-  }, [searchQuery, setSize]);
+  // Handle search input changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    debouncedSearch(e.target.value);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && searchQuery) {
         setSearchQuery("");
+        setSize(1); // Reset pagination when clearing search
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchQuery]);
+  }, [searchQuery, setSearchQuery, setSize]);
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
@@ -265,17 +272,19 @@ export default function RecentsPage() {
             whileFocus={{ boxShadow: "0 0 0 2px rgba(66, 153, 225, 0.5)" }}
             placeholder="Search chats..."
             className="pl-9 pr-8 border border-primary/30 rounded-lg h-12 w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
+            defaultValue={inputValue}
+            onChange={handleSearchChange}
           />
           {searchQuery && (
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setInputValue("");
+                setSize(1); // Reset pagination
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <XIcon className="h-4 w-4" />
@@ -322,7 +331,7 @@ export default function RecentsPage() {
           >
             <LoaderSpinner width="20" height="20" />
           </motion.div>
-        : filteredChats.length === 0 ?
+        : displayedChats.length === 0 ?
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -340,7 +349,7 @@ export default function RecentsPage() {
           </motion.div>
         : <motion.div className="space-y-4" variants={containerVariants}>
             <AnimatePresence>
-              {filteredChats.map((chat) => (
+              {displayedChats.map((chat) => (
                 <motion.div
                   key={chat.id}
                   variants={itemVariants}
@@ -410,23 +419,13 @@ export default function RecentsPage() {
               ))}
             </AnimatePresence>
 
+            {/* Infinite scroll trigger element */}
             {hasMore && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={loadMore}
-                  disabled={isValidating}
-                >
-                  {isValidating ?
-                    <LoaderSpinner />
-                  : "Load more"}
-                </Button>
-              </motion.div>
+              <div ref={loadMoreRef} className="py-4 text-center">
+                {isValidating && !isLoading && (
+                  <LoaderSpinner width="20" height="20" />
+                )}
+              </div>
             )}
           </motion.div>
         }
