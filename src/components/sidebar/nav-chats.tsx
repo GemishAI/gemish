@@ -15,11 +15,17 @@ import { useState } from "react";
 import { RefreshCw, ArrowRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useChats } from "@/hooks/use-chats";
 import { motion, AnimatePresence } from "motion/react";
+import useSWR from "swr";
+import type { Chat } from "@/server/db/schema";
 
 export function NavChats() {
-  const { data, isLoading, error, mutate } = useChats({ limit: "20" });
+  const { data, isLoading, error, mutate } = useSWR<{
+    chats: Chat[];
+  }>("/api/chats?limit=20", {
+    refreshInterval: 10000,
+  });
+
   const [isRetrying, setIsRetrying] = useState(false);
   const pathname = usePathname();
 
