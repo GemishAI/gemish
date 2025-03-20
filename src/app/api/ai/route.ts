@@ -26,6 +26,14 @@ export async function POST(req: Request) {
     model,
   }: { message: Message; id: string; model: string } = await req.json();
 
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   console.log("model", model);
 
   if (!message || !id) {
@@ -33,14 +41,6 @@ export async function POST(req: Request) {
       { error: "Message and chat ID are required" },
       { status: 400 }
     );
-  }
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       }),
       experimental_generateMessageId: createIdGenerator({
         prefix: "msgs",
-        separator: "_",
+        size: 16,
       }),
       async onFinish({ response }) {
         await saveChat({

@@ -135,7 +135,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     },
     generateId: createIdGenerator({
       prefix: "msgc",
-      separator: "_",
+      size: 16,
     }),
     headers: {
       "Content-Type": "application/json",
