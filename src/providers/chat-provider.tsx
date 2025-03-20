@@ -126,11 +126,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     error,
   } = useAIChat({
     api: apiUrl,
-    id: activeChat || undefined,
     initialMessages: initialMessages(),
     credentials: "include",
     body: {
       model, // Include model in all requests
+      id: activeChat || undefined,
     },
     headers: {
       "Content-Type": "application/json",
