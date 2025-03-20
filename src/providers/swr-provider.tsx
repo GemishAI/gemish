@@ -18,8 +18,6 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
   // Memoize the reconnection attempt function
   const attemptReconnect = useCallback(() => {
     // Only run this if we're offline
-    fetcher: (resource: RequestInfo, init: RequestInit) =>
-      fetch(resource, init).then((res) => res.json());
     if (!navigator.onLine && isReconnecting.current) {
       reconnectAttempts.current += 1;
 
@@ -124,6 +122,8 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
 
   // Define the SWR configuration with proper types
   const swrConfig: SWRConfiguration = {
+    fetcher: (resource: RequestInfo, init: RequestInit) =>
+      fetch(resource, init).then((res) => res.json()),
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: true,
