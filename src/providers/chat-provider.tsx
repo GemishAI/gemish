@@ -123,17 +123,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     api: "/api/ai",
     id: activeChat || undefined,
     initialMessages: initialMessages(),
-    experimental_throttle: 50,
     sendExtraMessageFields: true,
+    credentials: "include",
     generateId: createIdGenerator({
       prefix: "msgc",
       separator: "_",
     }),
+    body: {
+      model, // Include model in all requests
+    },
     experimental_prepareRequestBody: useCallback(
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
         if (id && pendingMessages[id]) {
-          return { message: pendingMessages[id], id };
+          return { message: pendingMessages[id], id, model };
         }
 
         // Otherwise, send the last message in the conversation
@@ -144,7 +147,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Fallback for empty conversations
         return { messages, id, model };
       },
-      [pendingMessages]
+      [pendingMessages, model]
     ),
     onFinish: useCallback(
       (message: Message) => {
