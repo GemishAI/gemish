@@ -1,10 +1,7 @@
 "use client";
 
-
 import { searchParams } from "@/config/search-params";
 import { useQueryState } from "nuqs";
-import { Billing } from "@/components/settings/billing";
-import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -13,15 +10,10 @@ export default function SettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (nav !== "account" && nav !== "billing") {
-      router.push("/settings?nav=account");
+    if (nav !== "account") {
+      router.push("/chat/settings?nav=account");
     }
   }, [nav, router]);
 
-  return (
-    <div>
-      {nav === "account" && <div>hello</div>}
-      {nav === "billing" && <Billing />}
-    </div>
-  );
+  return <div>{nav === "account" && <div>hello</div>}</div>;
 }
