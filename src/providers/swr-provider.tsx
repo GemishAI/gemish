@@ -57,9 +57,7 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
           loading: (
             <ToastMessage message="Connection lost. Attempting to reconnect..." />
           ),
-          success: (
-            <ToastMessage message="Connection restored" />
-          ),
+          success: <ToastMessage message="Connection restored" />,
           id: "network-status",
           duration: Infinity,
         }
@@ -72,6 +70,15 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
     if (!isReconnecting.current) {
       isReconnecting.current = true;
       reconnectAttempts.current = 0;
+
+      // Show immediate notification for connection loss
+      toast.loading(
+        <ToastMessage message="Connection lost. Attempting to reconnect..." />,
+        {
+          id: "network-status",
+          duration: Infinity,
+        }
+      );
 
       // Start first reconnection attempt after a short delay
       retryTimerRef.current = setTimeout(attemptReconnect, 2000);
@@ -87,13 +94,10 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
       retryTimerRef.current = null;
     }
 
-    toast.success(
-      <ToastMessage message="Connected to the internet" />,
-      {
-        id: "network-status",
-        duration: 3000,
-      }
-    );
+    toast.success(<ToastMessage message="Connected to the internet" />, {
+      id: "network-status",
+      duration: 3000,
+    });
 
     // Revalidate all data
     mutate("", { revalidate: true });

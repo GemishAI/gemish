@@ -108,6 +108,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return chats[activeChat];
   }, [activeChat, chats]);
 
+  const apiUrl =
+    process.env.NODE_ENV === "development" ?
+      "http://localhost:3000"
+    : "https://gemish.vercel.app/api/ai";
+
   // Enhanced AI chat hook with improved request preparation
   const {
     messages,
@@ -120,18 +125,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages,
     error,
   } = useAIChat({
-    api: "/api/ai",
+    api: apiUrl,
     id: activeChat || undefined,
     initialMessages: initialMessages(),
     credentials: "include",
-    streamProtocol: "text",
+    sendExtraMessageFields: true,
+    body: {
+      model, // Include model in all requests
+    },
     generateId: createIdGenerator({
       prefix: "msgc",
       separator: "_",
     }),
-    body: {
-      model, // Include model in all requests
-    },
     headers: {
       "Content-Type": "application/json",
     },
