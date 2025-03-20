@@ -129,7 +129,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     id: activeChat || undefined,
     initialMessages: initialMessages(),
     credentials: "include",
-    sendExtraMessageFields: true,
     body: {
       model, // Include model in all requests
     },
