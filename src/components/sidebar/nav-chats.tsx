@@ -194,7 +194,7 @@ export function NavChats() {
                     >
                       <Link
                         className="font-medium flex items-center gap-2 hover:underline px-2 py-1"
-                        href="/recents"
+                        href="/chat/recents"
                       >
                         <span>Show All</span>
                         <motion.div

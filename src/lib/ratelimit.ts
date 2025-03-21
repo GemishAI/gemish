@@ -1,8 +1,11 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@unkey/ratelimit";
+import { env } from "@/env.mjs";
 
-// Create a new ratelimiter, that allows 10 requests per 10 seconds
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(5, "30 s"),
+const limiter = new Ratelimit({
+  namespace: "next-example",
+  limit: 5,
+  duration: "30s",
+  rootKey: env.UNKEY_ROOT_KEY,
 });
+
+export default limiter;

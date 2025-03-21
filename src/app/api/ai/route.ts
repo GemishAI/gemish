@@ -15,6 +15,12 @@ import {
   CONVERSATIONAL_AI_PROMPT,
   FILE_ANALYSIS_AI_PROMPT,
 } from "@/config/system-prompts";
+import {
+  invalidateChatMessagesCache,
+  invalidateUserChatListCache,
+} from "@/lib/redis";
+
+import limiter from "@/lib/ratelimit";
 
 export const maxDuration = 30;
 
@@ -34,7 +40,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  console.log("model", model);
+  const ratelimit = await limiter.limit(session.user.id);
+
+  if (!ratelimit.success) {
+    return new NextResponse("Please try again later", { status: 429 });
+  }
 
   if (!message || !id) {
     return NextResponse.json(
@@ -73,11 +83,9 @@ export async function POST(req: Request) {
       messages,
       system:
         (messagesHaveAttachments && FILE_ANALYSIS_AI_PROMPT) ||
-        (model === "search" && WEB_SEARCH_SYSTEM_PROMPT) ||
-        (model === "nomal" && CONVERSATIONAL_AI_PROMPT) ||
         CONVERSATIONAL_AI_PROMPT,
       experimental_transform: smoothStream({
-        delayInMs: 25,
+        delayInMs: 20,
         chunking: "word",
       }),
       experimental_generateMessageId: createIdGenerator({
@@ -93,6 +101,8 @@ export async function POST(req: Request) {
             responseMessages: response.messages,
           }),
         });
+        await invalidateChatMessagesCache(session.user.id, id);
+        await invalidateUserChatListCache(session.user.id);
       },
     });
 

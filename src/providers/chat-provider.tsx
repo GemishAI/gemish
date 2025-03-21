@@ -23,7 +23,7 @@ import {
   type ModelState,
   useFileUpload,
 } from "@/hooks/chat-provider";
-import { useModel } from "@/hooks/chat-provider/useModel";
+import { env } from "@/env.mjs";
 
 interface ChatContextType {
   // Chat state
@@ -111,6 +111,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       prefix: "msgc",
       size: 16,
     }),
+    headers: {
+      Authorization: `Bearer ${env.NEXT_PUBLIC_GEMISH_API_KEY}`,
+    },
     experimental_prepareRequestBody: useCallback(
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it

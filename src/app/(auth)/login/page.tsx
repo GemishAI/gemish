@@ -52,21 +52,24 @@ export default function Login() {
             disabled={loadingProvider !== null}
             size={"lg"}
           >
-            {loadingProvider === "github" ?
+            {loadingProvider === "github" ? (
               <Loader2 size={18} className="animate-spin mr-3" />
-            : <GithubIcon className="mr-3" size={18} />}
+            ) : (
+              <GithubIcon className="mr-3" size={18} />
+            )}
             Continue with GitHub
           </Button>
 
-          <Button
+          {/* <Button
             onClick={() => handleSocialLogin("google")}
             variant="outline"
             disabled={loadingProvider !== null}
             size={"lg"}
           >
-            {loadingProvider === "google" ?
+            {loadingProvider === "google" ? (
               <Loader2 size={18} className="animate-spin mr-3" />
-            : <div className="mr-3">
+            ) : (
+              <div className="mr-3">
                 <svg
                   width="18"
                   height="18"
@@ -91,14 +94,11 @@ export default function Login() {
                   />
                 </svg>
               </div>
-            }
+            )}
             Continue with Google
-          </Button>
+          </Button> */}
         </div>
       </div>
-      <p className="text-muted-foreground text-sm text-pretty">
-        By Signing in, you agree to our Terms of Service and Privacy Policy.
-      </p>
     </div>
   );
 }

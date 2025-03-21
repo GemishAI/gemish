@@ -4,6 +4,7 @@ import { useSWRConfig, SWRConfig, type SWRConfiguration } from "swr";
 import { toast } from "sonner";
 import { useEffect, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
+import { env } from "@/env.mjs";
 
 interface SWRProviderProps {
   children: ReactNode;
@@ -122,8 +123,22 @@ export const SWRProvider = ({ children }: SWRProviderProps) => {
 
   // Define the SWR configuration with proper types
   const swrConfig: SWRConfiguration = {
-    fetcher: (resource: RequestInfo, init: RequestInit) =>
-      fetch(resource, init).then((res) => res.json()),
+    fetcher: async (resource: RequestInfo, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+
+      headers.set("Authorization", `Bearer ${env.NEXT_PUBLIC_GEMISH_API_KEY}`);
+
+      const response = await fetch(resource, {
+        ...init,
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Fetch error: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
     revalidateIfStale: true,

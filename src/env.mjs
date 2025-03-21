@@ -22,13 +22,14 @@ export const env = createEnv({
     AWS_REGION: z.string().min(1),
     AWS_S3_BUCKET_NAME: z.string().min(1),
 
-    POLAR_ACCESS_TOKEN: z.string().min(1),
-    POLAR_WEBHOOK_SECRET: z.string().min(1),
-    POLAR_SERVER: z.enum(["production", "sandbox"]),
-
     CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().min(1),
+
+    UNKEY_ROOT_KEY: z.string().min(1),
+    UNKEY_API_ID: z.string().min(1),
   },
-  client: {},
+  client: {
+    NEXT_PUBLIC_GEMISH_API_KEY: z.string().min(1),
+  },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
 
@@ -39,6 +40,10 @@ export const env = createEnv({
 
     CLOUDFLARE_TURNSTILE_SECRET_KEY:
       process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+
+    NEXT_PUBLIC_GEMISH_API_KEY: process.env.NEXT_PUBLIC_GEMISH_API_KEY,
+    UNKEY_ROOT_KEY: process.env.UNKEY_ROOT_KEY,
+    UNKEY_API_ID: process.env.UNKEY_API_ID,
 
     BETTER_AUTH_APP_NAME: process.env.BETTER_AUTH_APP_NAME,
     BETTER_AUTH_GITHUB_CLIENT_ID: process.env.BETTER_AUTH_GITHUB_CLIENT_ID,
@@ -53,9 +58,5 @@ export const env = createEnv({
     AWS_ENDPOINT_URL: process.env.AWS_ENDPOINT_URL,
     AWS_REGION: process.env.AWS_REGION,
     AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
-
-    POLAR_ACCESS_TOKEN: process.env.POLAR_ACCESS_TOKEN,
-    POLAR_WEBHOOK_SECRET: process.env.POLAR_WEBHOOK_SECRET,
-    POLAR_SERVER: process.env.POLAR_SERVER,
   },
 });
