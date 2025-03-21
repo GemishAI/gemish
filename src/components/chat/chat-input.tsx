@@ -5,18 +5,10 @@ import {
   PromptInputAction,
 } from "@/components/prompt-kit/prompt-input";
 import { Button } from "../ui/button";
-import {
-  Globe,
-  Brain,
-  Paperclip,
-  ArrowUpIcon,
-  Loader2Icon,
-  Square,
-} from "lucide-react";
+import { Paperclip, ArrowUpIcon, Loader2Icon, Square } from "lucide-react";
 import { type DebouncedState } from "use-debounce";
 import { ChatInputFiles } from "./chat-input-files";
 import { useChat } from "@/providers/chat-provider";
-import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   input: string;
@@ -42,25 +34,7 @@ export function ChatInput({
   handleFileChange,
   fileList,
 }: ChatInputProps) {
-  const {
-    isUploading,
-    isSearchActive,
-    isThinkActive,
-    setModelState,
-    toggleSearch,
-    toggleThink,
-  } = useChat();
-
-  // Define the gradient styles for the active buttons
-  const searchButtonGradient =
-    isSearchActive ?
-      "bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700"
-    : "bg-transparent";
-
-  const thinkButtonGradient =
-    isThinkActive ?
-      "bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700"
-    : "bg-transparent";
+  const { isUploading } = useChat();
 
   return (
     <PromptInput
@@ -77,54 +51,25 @@ export function ChatInput({
         disabled={status !== "ready"}
       />
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-        <div className="flex items-center gap-2">
-          <PromptInputAction tooltip="Attach files">
-            <Button
-              size="sm"
-              variant={"outline"}
-              className="h-9 w-9 rounded-full"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isSearchActive}
-            >
-              <input
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-                accept="image/*,.pdf"
-                multiple
-                ref={fileInputRef}
-              />
-              <Paperclip className=" size-5" />
-            </Button>
-          </PromptInputAction>
-
+        <PromptInputAction tooltip="Attach files">
           <Button
             size="sm"
-            variant={isSearchActive ? "default" : "outline"}
-            className={cn("h-9 w-fit rounded-full", searchButtonGradient)}
-            onClick={toggleSearch}
+            variant={"outline"}
+            className="h-9 w-9 rounded-full"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={status !== "ready"}
           >
-            <Globe
-              className={cn("size-5", isSearchActive ? "text-white" : "")}
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+              accept="image/*,.pdf"
+              multiple
+              ref={fileInputRef}
             />
-            Search
+            <Paperclip className=" size-5" />
           </Button>
-
-          <Button
-            size="sm"
-            variant={isThinkActive ? "default" : "outline"}
-            className={cn("h-9 w-fit rounded-full", thinkButtonGradient)}
-            onClick={toggleThink}
-          >
-            <Brain
-              className={cn(
-                "size-5",
-                isThinkActive ? "text-white" : "text-primary"
-              )}
-            />
-            Think
-          </Button>
-        </div>
+        </PromptInputAction>
 
         <div className="flex items-center gap-2">
           <PromptInputAction

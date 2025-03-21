@@ -53,14 +53,6 @@ interface ChatContextType {
   fileList: File[];
   removeFile: (file: File) => void;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-
-  // Model state
-  model: ModelState;
-  setModelState: (model: ModelState) => void;
-  toggleSearch: () => void;
-  toggleThink: () => void;
-  isSearchActive: boolean;
-  isThinkActive: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -91,16 +83,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     clearAttachments,
     clearFileUploads,
   } = useFileUpload();
-
-  // Model state
-  const {
-    model,
-    setModelState,
-    toggleSearch,
-    toggleThink,
-    isSearchActive,
-    isThinkActive,
-  } = useModel();
 
   // Memoize initial messages to prevent unnecessary recreations
   const initialMessages = useCallback(() => {
@@ -133,18 +115,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
         if (id && pendingMessages[id]) {
-          return { message: pendingMessages[id], id, model };
+          return { message: pendingMessages[id], id };
         }
 
         // Otherwise, send the last message in the conversation
         if (messages.length > 0) {
-          return { message: messages[messages.length - 1], id, model };
+          return { message: messages[messages.length - 1], id };
         }
 
         // Fallback for empty conversations
-        return { messages, id, model };
+        return { messages, id };
       },
-      [pendingMessages, model]
+      [pendingMessages]
     ),
     onFinish: useCallback(
       (message: Message) => {
@@ -392,14 +374,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     handleFileChange,
     isUploading,
     fileUploads,
-
-    // Model state
-    model,
-    setModelState,
-    toggleSearch,
-    toggleThink,
-    isSearchActive,
-    isThinkActive,
   };
 
   return (

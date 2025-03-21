@@ -67,9 +67,8 @@ export async function POST(req: Request) {
     );
 
     const result = streamText({
-      model:
-        messagesHaveAttachments ?
-          gemish.languageModel("image")
+      model: messagesHaveAttachments
+        ? gemish.languageModel("image")
         : gemish.languageModel(model),
       messages,
       system:
@@ -80,6 +79,10 @@ export async function POST(req: Request) {
       experimental_transform: smoothStream({
         delayInMs: 25,
         chunking: "word",
+      }),
+      experimental_generateMessageId: createIdGenerator({
+        prefix: "msgs",
+        size: 16,
       }),
       async onFinish({ response }) {
         await saveChat({

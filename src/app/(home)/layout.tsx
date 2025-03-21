@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/sidebar/components/theme-toggle";
+import { auth } from "@/lib/auth";
+import headers from "next/headers";
 
 export { metadata } from "@/config/metadata";
 

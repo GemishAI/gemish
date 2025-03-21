@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useTransition, useCallback } from "react";
 import type { Attachment, FileUploadStatus } from "./types";
 
@@ -40,7 +42,9 @@ export function useFileUpload() {
 
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            const percentComplete = Math.round(
+              (event.loaded / event.total) * 100
+            );
             if (percentComplete !== lastProgress) {
               lastProgress = percentComplete;
               setFileUploads((prev) =>
@@ -56,9 +60,9 @@ export function useFileUpload() {
           if (xhr.status >= 200 && xhr.status < 300) {
             setFileUploads((prev) =>
               prev.map((item) =>
-                item.id === id
-                  ? { ...item, status: "success" as const, url: fileUrl }
-                  : item
+                item.id === id ?
+                  { ...item, status: "success" as const, url: fileUrl }
+                : item
               )
             );
 
@@ -88,21 +92,26 @@ export function useFileUpload() {
       const errorMessage = err.message || "An error occurred during upload";
       setFileUploads((prev) =>
         prev.map((item) =>
-          item.id === id
-            ? { ...item, status: "error" as const, error: errorMessage }
-            : item
+          item.id === id ?
+            { ...item, status: "error" as const, error: errorMessage }
+          : item
         )
       );
     }
   }, []);
 
-  const uploadAllFiles = useCallback((files: FileUploadStatus[]) => {
-    startTransition(async () => {
-      await Promise.all(
-        files.map((fileUpload) => uploadFileToS3(fileUpload.file, fileUpload.id))
-      );
-    });
-  }, [uploadFileToS3]);
+  const uploadAllFiles = useCallback(
+    (files: FileUploadStatus[]) => {
+      startTransition(async () => {
+        await Promise.all(
+          files.map((fileUpload) =>
+            uploadFileToS3(fileUpload.file, fileUpload.id)
+          )
+        );
+      });
+    },
+    [uploadFileToS3]
+  );
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,7 +134,7 @@ export function useFileUpload() {
 
       // Clear input value after state updates
       if (event.target.value) event.target.value = "";
-      
+
       // Start upload after state updates are complete
       uploadAllFiles(newFileUploads);
     },

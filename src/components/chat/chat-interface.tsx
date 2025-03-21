@@ -16,8 +16,6 @@ import { LoaderSpinner } from "../loader-spinner";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
 import { MessageAttachments } from "./messages/message-attachments";
-import { AIReasoning } from "./messages/ai-reasoning";
-import { AISourcesList } from "./messages/ai-sources";
 
 interface ChatInterfaceProps {
   id: string;
@@ -119,17 +117,6 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                     </MessageContent>
                   </div>
                 : <div className="w-full flex flex-col items-start gap-2">
-                    {/* Reasoning Component */}
-                    {message.parts &&
-                      message.parts.filter((part) => part.type === "reasoning")
-                        .length > 0 && (
-                        <AIReasoning
-                          reasoningParts={message.parts.filter(
-                            (part) => part.type === "reasoning"
-                          )}
-                        />
-                      )}
-
                     {/* Render text parts after reasoning */}
                     {message.parts &&
                       message.parts.map((part, index) => {
@@ -143,17 +130,6 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         }
                         return null;
                       })}
-
-                    {/* Check if sources exists in message.parts */}
-                    {message.parts &&
-                      message.parts.filter((part) => part.type === "source")
-                        .length > 0 && (
-                        <AISourcesList
-                          sources={message.parts
-                            .filter((part) => part.type === "source")
-                            .map((part) => part.source)}
-                        />
-                      )}
                   </div>
                 }
               </MessageComponent>
