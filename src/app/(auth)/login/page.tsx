@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GithubIcon, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { usePostHog } from "posthog-js/react";
 
 const providers = ["github", "google"] as const;
 type Provider = (typeof providers)[number];
 
 export default function Login() {
-  const router = useRouter();
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+  const posthog = usePostHog();
   const turnstileToken = "0x4AAAAAABBxvHiCvz0rlP2q";
 
   async function handleSocialLogin(provider: Provider) {
@@ -47,7 +47,10 @@ export default function Login() {
         </div>
         <div className="space-y-4 flex flex-col">
           <Button
-            onClick={() => handleSocialLogin("github")}
+            onClick={() => {
+              handleSocialLogin("github");
+              posthog.capture("github_sign_in");
+            }}
             variant="outline"
             disabled={loadingProvider !== null}
             size={"lg"}
@@ -61,7 +64,7 @@ export default function Login() {
           </Button>
 
           {/* <Button
-            onClick={() => handleSocialLogin("google")}
+            onClick={() => {handleSocialLogin("google");  posthog.capture("google_sign_in");}}
             variant="outline"
             disabled={loadingProvider !== null}
             size={"lg"}

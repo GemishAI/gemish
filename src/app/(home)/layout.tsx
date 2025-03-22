@@ -59,32 +59,6 @@ export default async function RootLayout({
           </div>
 
           {/* Footer */}
-          <footer className="w-full py-6 border-t border-border">
-            <div className="container max-w-6xl mx-auto">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <p className="text-muted-foreground text-sm">
-                  Copyright © 2025 Gemish. All rights reserved.
-                </p>
-
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-4">
-                    <FooterLink href="https://x.com/GemishAI" external>
-                      X
-                    </FooterLink>
-                    <FooterLink
-                      href="https://github.com/GemishAI/gemish"
-                      external
-                    >
-                      Github
-                    </FooterLink>
-
-                    <FooterLink href="/privacy">Privacy Policy</FooterLink>
-                    <FooterLink href="/terms">Terms of Service</FooterLink>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </footer>
         </HomeProviders>
       </body>
     </html>
@@ -92,23 +66,3 @@ export default async function RootLayout({
 }
 
 // Custom footer link component with hover states
-function FooterLink({
-  href,
-  children,
-  external = false,
-}: {
-  href: string;
-  children: React.ReactNode;
-  external?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
-      className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
-    >
-      {children}
-    </Link>
-  );
-}

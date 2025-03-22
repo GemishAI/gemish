@@ -1,22 +1,18 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import {
   ArrowRight,
-  Sparkles,
-  Search,
-  Zap,
-  ExternalLink,
-  ChevronRight,
   MessageCircle,
   ImageIcon,
   FileTextIcon,
 } from "lucide-react";
-import { WarpBackground } from "@/components/warp-background";
-import { Badge } from "@/components/ui/badge";
+import { usePostHog } from "posthog-js/react";
 
 export default function ChatPage() {
-  const techStack = ["React", "Node.js", "Tailwind", "Vercel", "Firebase"];
+  const posthog = usePostHog();
   return (
     <div className="w-full mx-auto flex flex-col h-full space-y-24">
       {/* Hero Section */}
@@ -33,7 +29,12 @@ export default function ChatPage() {
         </p>
 
         <div className="pt-4">
-          <Button size="lg" asChild className="rounded-full">
+          <Button
+            size="lg"
+            onClick={() => posthog.capture("try_gemish_free")}
+            asChild
+            className="rounded-full"
+          >
             <Link href="/login" className="dark:text-white">
               Try Gemish for free
               <ArrowRight className="ml-2 h-5 w-5" />
