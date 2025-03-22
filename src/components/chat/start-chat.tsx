@@ -3,7 +3,7 @@
 import type React from "react";
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/providers/auth-provider";
 import { useChat } from "@/providers/chat-provider";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatInput } from "./chat-input";
@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 export function StartChat() {
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
-  const { data: session } = useSession();
+  const { session } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [status, setStatus] = useState<"submitted" | "ready">("ready");
   const [activeCategory, setActiveCategory] = useState("");
@@ -124,11 +124,11 @@ export function StartChat() {
 
   // Get a flattened list of all suggestions for default view
   const defaultSuggestions =
-    activeCategory === "" ?
-      suggestionGroups.flatMap(
-        (group) => group.items.slice(0, 1) // Take first item from each category for default view
-      )
-    : [];
+    activeCategory === ""
+      ? suggestionGroups.flatMap(
+          (group) => group.items.slice(0, 1) // Take first item from each category for default view
+        )
+      : [];
 
   // Render suggestion item with separator
   const renderSuggestionItem = (
@@ -198,9 +198,9 @@ export function StartChat() {
                 <PromptSuggestion
                   onClick={() => toggleCategory(suggestion.label)}
                   className={`capitalize ${
-                    activeCategory === suggestion.label ?
-                      "bg-blue-100 dark:bg-blue-700 border-blue-400 dark:border-blue-800 text-blue-800 dark:text-blue-50"
-                    : ""
+                    activeCategory === suggestion.label
+                      ? "bg-blue-100 dark:bg-blue-700 border-blue-400 dark:border-blue-800 text-blue-800 dark:text-blue-50"
+                      : ""
                   }`}
                 >
                   {suggestion.icon && (
@@ -214,7 +214,7 @@ export function StartChat() {
 
           {/* Show category-specific suggestions when a category is active */}
           <AnimatePresence mode="wait">
-            {activeCategory ?
+            {activeCategory ? (
               <motion.div
                 key="active-category"
                 className="flex w-full flex-col mt-2"
@@ -232,7 +232,8 @@ export function StartChat() {
                   )
                 )}
               </motion.div>
-            : <motion.div
+            ) : (
+              <motion.div
                 key="default-suggestions"
                 className="flex w-full flex-col mt-2"
                 initial={{ opacity: 0, height: 0 }}
@@ -251,7 +252,7 @@ export function StartChat() {
                   );
                 })}
               </motion.div>
-            }
+            )}
           </AnimatePresence>
         </motion.div>
       </motion.div>

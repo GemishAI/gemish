@@ -27,12 +27,6 @@ export const POST = withUnkey(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ratelimit = await limiter.limit(session.user.id);
-
-    if (!ratelimit.success) {
-      return new NextResponse("Please try again later", { status: 429 });
-    }
-
     try {
       const body = await request.json();
       const { fileName, fileType }: { fileName: string; fileType: string } =
@@ -69,7 +63,7 @@ export const POST = withUnkey(
         success: true,
         presignedUrl,
         key,
-        url: `https://gemish.fly.storage.tigris.dev/${key}`,
+        url: `${env.AWS_ENDPOINT_URL}/${key}`,
       });
     } catch (error) {
       console.error("Error generating presigned URL:", error);

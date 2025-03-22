@@ -19,14 +19,14 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <HomeProviders>
-        <body
-          className={cn(
-            inter.variable,
-            urbanist.variable,
-            "antialiased min-h-screen w-full bg-gradient-to-b dark:from-gray-900 dark:to-black dark"
-          )}
-        >
+      <body
+        className={cn(
+          inter.variable,
+          urbanist.variable,
+          "antialiased min-h-screen w-full bg-gradient-to-b dark:from-gray-900 dark:to-black dark"
+        )}
+      >
+        <HomeProviders>
           {/* Navigation */}
           <header className="w-full h-16 fixed top-0 inset-x-0 z-50">
             <div className="container max-w-6xl mx-auto backdrop-blur-lg">
@@ -85,8 +85,8 @@ export default async function RootLayout({
               </div>
             </div>
           </footer>
-        </body>
-      </HomeProviders>
+        </HomeProviders>
+      </body>
     </html>
   );
 }

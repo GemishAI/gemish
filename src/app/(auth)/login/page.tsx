@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "@/lib/auth-client";
+import { signIn } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -98,6 +98,23 @@ export default function Login() {
             Continue with Google
           </Button> */}
         </div>
+        <p className="text-sm text-muted-foreground">
+          By clicking continue, you agree to our{" "}
+          <Link
+            href="/terms"
+            className="underline hover:text-primary duration-200 transition-all ease-in-out"
+          >
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="underline hover:text-primary duration-200 transition-all ease-in-out"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

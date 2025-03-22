@@ -120,11 +120,14 @@ export const verification = pgTable(
 export const chat = pgTable(
   "chat",
   {
-    id: text("id").primaryKey().notNull(),
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => IdGenerator("chat")),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    title: text("title").default("New Chat"),
+    title: text("title").default("(New Chat)"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

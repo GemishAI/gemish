@@ -4,56 +4,57 @@ import { ThemeProvider } from "./theme-provider";
 import { SidebarProviderWrapper } from "@/components/sidebar/sidebar-provider-wrapper";
 import { ChatProvider } from "./chat-provider";
 import { SWRProvider } from "./swr-provider";
+import { PostHogProvider } from "./posthog-provider";
+import { AuthProvider } from "./auth-provider";
+
+interface BaseProviderProps {
+  children: React.ReactNode;
+  disableTransitionOnChange?: boolean;
+}
+
+// Base theme provider config that's common across all providers
+function BaseThemeProvider({
+  children,
+  disableTransitionOnChange = false,
+}: BaseProviderProps) {
+  return (
+    <AuthProvider>
+      <PostHogProvider>
+        <ThemeProvider
+          storageKey="gemish-theme"
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={disableTransitionOnChange}
+        >
+          {children}
+          <Toaster richColors />
+        </ThemeProvider>
+      </PostHogProvider>
+    </AuthProvider>
+  );
+}
 
 export function ChatProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider
-      storageKey="gemish-theme"
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-    >
+    <BaseThemeProvider>
       <ChatProvider>
         <SWRProvider>
           <SidebarProviderWrapper>
-            <NuqsAdapterProvider>
-              {children}
-              <Toaster richColors />
-            </NuqsAdapterProvider>
+            <NuqsAdapterProvider>{children}</NuqsAdapterProvider>
           </SidebarProviderWrapper>
         </SWRProvider>
       </ChatProvider>
-    </ThemeProvider>
+    </BaseThemeProvider>
   );
 }
 
 export function HomeProviders({ children }: { children: React.ReactNode }) {
-  return (
-    <ThemeProvider
-      storageKey="gemish-theme"
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-    >
-      <NuqsAdapterProvider>
-        {children}
-        <Toaster richColors />
-      </NuqsAdapterProvider>
-    </ThemeProvider>
-  );
+  return <BaseThemeProvider>{children}</BaseThemeProvider>;
 }
 
 export function AuthProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider
-      storageKey="gemish-theme"
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      {children}
-      <Toaster richColors />
-    </ThemeProvider>
+    <BaseThemeProvider disableTransitionOnChange>{children}</BaseThemeProvider>
   );
 }

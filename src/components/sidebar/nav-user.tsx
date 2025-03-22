@@ -19,15 +19,14 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/sidebar/components/theme-toggle";
 import Link from "next/link";
-import { signOut } from "@/lib/auth-client";
-import { useSession } from "@/lib/auth-client";
+import { signOut, useAuth } from "@/providers/auth-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 
 export function NavUser() {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const { data: session, isPending, error } = useSession();
+  const { session, isPending, error } = useAuth();
 
   if (isPending) {
     return (

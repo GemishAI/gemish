@@ -4,6 +4,7 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
+    DATABASE_URL_REPLICA: z.string().url(),
 
     UPSTASH_REDIS_REST_URL: z.string().url(),
     UPSTASH_REDIS_REST_TOKEN: z.string(),
@@ -29,9 +30,13 @@ export const env = createEnv({
   },
   client: {
     NEXT_PUBLIC_GEMISH_API_KEY: z.string().min(1),
+
+    NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().url(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_URL_REPLICA: process.env.DATABASE_URL_REPLICA,
 
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
@@ -58,5 +63,8 @@ export const env = createEnv({
     AWS_ENDPOINT_URL: process.env.AWS_ENDPOINT_URL,
     AWS_REGION: process.env.AWS_REGION,
     AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
+
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
 });
