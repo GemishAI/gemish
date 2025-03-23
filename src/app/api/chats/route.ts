@@ -6,7 +6,6 @@ import { headers } from "next/headers";
 import { eq, and, desc, asc, ilike, count } from "drizzle-orm";
 import { generateText } from "ai";
 import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
-import { google } from "@ai-sdk/google";
 import { generateId } from "ai";
 import { gemish } from "@/ai/model";
 import {
@@ -17,7 +16,6 @@ import {
   invalidateAllUserChatCaches,
 } from "@/lib/redis";
 import { withUnkey } from "@unkey/nextjs";
-import limiter from "@/lib/ratelimit";
 import { env } from "@/env.mjs";
 
 // Background title generation with AI
@@ -55,12 +53,6 @@ export const GET = withUnkey(
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const ratelimit = await limiter.limit(session.user.id);
-
-    if (!ratelimit.success) {
-      return new NextResponse("Please try again later", { status: 429 });
     }
 
     const { searchParams } = new URL(request.url);

@@ -6,7 +6,6 @@ import { headers } from "next/headers";
 import { eq, asc } from "drizzle-orm";
 import { validateChatOwnership } from "@/server/db/message-loader";
 import { getCompressed, setCompressed } from "@/lib/redis";
-import limiter from "@/lib/ratelimit";
 import { env } from "@/env.mjs";
 import { withUnkey } from "@unkey/nextjs";
 
@@ -21,12 +20,6 @@ export const GET = withUnkey(
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const ratelimit = await limiter.limit(session.user.id);
-
-    if (!ratelimit.success) {
-      return new NextResponse("Please try again later", { status: 429 });
     }
 
     try {
