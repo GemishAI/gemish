@@ -191,7 +191,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Create the chat on the server with the initial message
         const response = await fetch("/api/chats", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${env.NEXT_PUBLIC_GEMISH_API_KEY}`,
+          },
           body: JSON.stringify({
             id: chatId,
             message: initialMessage,

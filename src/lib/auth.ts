@@ -8,9 +8,9 @@ import { captcha } from "better-auth/plugins";
 const auth_prefix = env.BETTER_AUTH_REDIS_PREFIX;
 
 const baseURL =
-  process.env.NODE_ENV === "development" ?
-    "http://localhost:3000"
-  : "https://gemish.vercel.app";
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : "https://gemish.vercel.app";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   appName: env.BETTER_AUTH_APP_NAME,
@@ -41,9 +41,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 
     set: async (key, value, ttl) => {
       const serializedValue =
-        typeof value === "object" && value !== null ?
-          JSON.stringify(value)
-        : String(value);
+        typeof value === "object" && value !== null
+          ? JSON.stringify(value)
+          : String(value);
 
       if (ttl) {
         await redis.set(`${auth_prefix}:${key}`, serializedValue, { ex: ttl });
@@ -65,6 +65,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     github: {
       clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID as string,
       clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET as string,
+    },
+    google: {
+      clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID,
+      clientSecret: env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
     },
   },
 

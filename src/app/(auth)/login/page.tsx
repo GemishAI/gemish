@@ -63,8 +63,11 @@ export default function Login() {
             Continue with GitHub
           </Button>
 
-          {/* <Button
-            onClick={() => {handleSocialLogin("google");  posthog.capture("google_sign_in");}}
+          <Button
+            onClick={() => {
+              handleSocialLogin("google");
+              posthog.capture("google_sign_in");
+            }}
             variant="outline"
             disabled={loadingProvider !== null}
             size={"lg"}
@@ -99,7 +102,7 @@ export default function Login() {
               </div>
             )}
             Continue with Google
-          </Button> */}
+          </Button>
         </div>
         <p className="text-sm text-muted-foreground">
           By clicking continue, you agree to our{" "}
