@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePostHog } from "posthog-js/react";
+import { siteConfig } from "@/config/site";
 
 export function Footer() {
   const posthog = usePostHog();
@@ -15,10 +16,10 @@ export function Footer() {
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
-              <FooterLink href="https://x.com/GemishAI" external>
+              <FooterLink href={siteConfig.links.twitter} external>
                 X
               </FooterLink>
-              <FooterLink href="https://github.com/GemishAI/gemish" external>
+              <FooterLink href={siteConfig.links.github} external>
                 Github
               </FooterLink>
 
