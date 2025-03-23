@@ -75,11 +75,12 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden">
-      {isChatLoading ?
+      {isChatLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <LoaderSpinner width="20" height="20" />
         </div>
-      : <ChatContainer ref={containerRef} className="space-y-12 flex-1 py-5">
+      ) : (
+        <ChatContainer ref={containerRef} className="space-y-12 flex-1 py-5">
           {messages.map((message) => (
             <motion.div key={message.id}>
               <MessageComponent
@@ -96,7 +97,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                     />
                   </div>
                 )}
-                {message.role === "user" ?
+                {message.role === "user" ? (
                   <div className="flex flex-col items-end w-full gap-1">
                     {message.experimental_attachments && (
                       <MessageAttachments
@@ -116,7 +117,8 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         })}
                     </MessageContent>
                   </div>
-                : <div className="w-full flex flex-col items-start gap-2">
+                ) : (
+                  <div className="w-full flex flex-col items-start gap-2">
                     {/* Render text parts after reasoning */}
                     {message.parts &&
                       message.parts.map((part, index) => {
@@ -131,7 +133,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         return null;
                       })}
                   </div>
-                }
+                )}
               </MessageComponent>
             </motion.div>
           ))}
@@ -142,7 +144,7 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
             <AILoading status={status} messages={messages} />
           )}
         </ChatContainer>
-      }
+      )}
       <motion.div
         className="w-full bg-background sticky bottom-0 z-10 inset-x-0 pb-4"
         initial={{ y: 20, opacity: 0 }}

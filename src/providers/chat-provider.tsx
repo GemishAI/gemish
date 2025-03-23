@@ -68,6 +68,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   >({});
   const [isChatLoading, startTransition] = useTransition();
 
+  // Store input state for each chat separately
+  const [chatInputs, setChatInputs] = useState<Record<string, string>>({});
+
   // Ref for tracking if AI response is needed (prevents unneeded re-renders)
   const needsAiResponse = useRef(false);
 
@@ -93,8 +96,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Enhanced AI chat hook with improved request preparation
   const {
     messages,
-    input,
-    setInput,
+    input: aiInput,
+    setInput: setAiInput,
     handleSubmit: aiHandleSubmit,
     status,
     stop,
@@ -159,6 +162,39 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     ),
   });
 
+  // Get current input for the active chat or start page
+  const getCurrentInput = useCallback(() => {
+    if (!activeChat) {
+      // For start chat page
+      return chatInputs["startChat"] || "";
+    }
+    // For specific chat pages
+    return chatInputs[activeChat] || "";
+  }, [activeChat, chatInputs]);
+
+  // Set input for the current chat or start page
+  const setCurrentInput = useCallback(
+    (value: string | ((prev: string) => string)) => {
+      const chatId = activeChat || "startChat";
+
+      // Handle both function and direct value updates
+      const newValue =
+        typeof value === "function" ? value(chatInputs[chatId] || "") : value;
+
+      // Update our internal state
+      setChatInputs((prev) => ({
+        ...prev,
+        [chatId]: newValue,
+      }));
+
+      // Also update AI hook's input if in a chat
+      if (activeChat) {
+        setAiInput(newValue);
+      }
+    },
+    [activeChat, setAiInput, chatInputs]
+  );
+
   // Create a new chat with an initial message - debounced to prevent accidental double creation
   const createChat = useDebouncedCallback(
     async (initialMessage: string) => {
@@ -178,8 +214,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           },
         ],
       };
-
-      needsAiResponse.current = true;
 
       // Update local state first
       setChats((prev) => ({
@@ -205,9 +239,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           throw new Error("Failed to create chat");
         }
 
+        // Clear the start chat input
+        setChatInputs((prev) => ({
+          ...prev,
+          startChat: "",
+        }));
+
         // Set this as the active chat
         setActiveChat(chatId);
         setMessages([initialMessageObj]);
+
+        needsAiResponse.current = true;
         router.push(`/chat/c/${chatId}`);
         mutate(
           (key) => typeof key === "string" && key.startsWith("/api/chats")
@@ -227,15 +269,80 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     { leading: true, trailing: false }
   );
 
+  // Memoized function to set active chat and load messages if needed
+  const setActiveChatWithLoad = useCallback(
+    (chatId: string | null) => {
+      if (chatId === activeChat) return;
+
+      // Reset state when changing chats
+      setMessages([]);
+      setActiveChat(chatId);
+
+      // Set the AI input to the cached value for this chat
+      if (chatId && chatInputs[chatId]) {
+        setAiInput(chatInputs[chatId]);
+      } else {
+        setAiInput("");
+      }
+
+      // Important: Don't auto-trigger messages when switching chats
+      needsAiResponse.current = false;
+
+      if (!chatId) return;
+
+      // Check if we already have this chat loaded
+      if (chats[chatId]) {
+        setMessages(chats[chatId]);
+        return;
+      }
+
+      // Fetch chat messages from server
+      startTransition(async () => {
+        try {
+          const response = await fetch(`/api/chats/${chatId}/messages`);
+          const data = await response.json();
+
+          if (Array.isArray(data.messages)) {
+            // Store the messages
+            setChats((prev) => ({
+              ...prev,
+              [chatId]: data.messages,
+            }));
+
+            // Only update messages if this is still the active chat
+            if (activeChat === chatId) {
+              setMessages(data.messages);
+            }
+          } else {
+            console.error("Invalid message format received:", data);
+            if (activeChat === chatId) {
+              setMessages([]);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load chat:", error);
+
+          if (activeChat === chatId) {
+            setMessages([]);
+          }
+        }
+      });
+    },
+    [activeChat, chats, setMessages, setAiInput, chatInputs]
+  );
+
   // Optimized submit handler with proper dependency tracking
   const handleSubmit = useDebouncedCallback(
     async (event?: React.FormEvent) => {
-      if (!activeChat || !input.trim()) return;
+      if (!activeChat) return;
+
+      const currentInput = getCurrentInput();
+      if (!currentInput.trim()) return;
 
       const userMessage: Message = {
         id: generateId(),
         role: "user",
-        content: input,
+        content: currentInput,
         createdAt: new Date(),
       };
 
@@ -252,6 +359,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           [activeChat]: [...currentMessages, userMessage],
         };
       });
+
+      // After submission, clear the input from our storage
+      setChatInputs((prev) => ({
+        ...prev,
+        [activeChat]: "",
+      }));
+
+      // Also clear the AI input
+      setAiInput("");
 
       // Set flag to trigger AI response
       needsAiResponse.current = true;
@@ -287,76 +403,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [activeChat, status, aiHandleSubmit]);
 
-  // Memoized function to set active chat and load messages if needed
-  const setActiveChatWithLoad = useCallback(
-    (chatId: string | null) => {
-      if (chatId === activeChat) return;
-
-      // Reset state when changing chats
-      setMessages([]);
-      setActiveChat(chatId);
-      needsAiResponse.current = false;
-
-      if (!chatId) return;
-
-      // Check if we already have this chat loaded
-      if (chats[chatId]) {
-        setMessages(chats[chatId]);
-
-        // Check if the last message is from the user and needs a response
-        const chatMessages = chats[chatId];
-        if (
-          chatMessages.length > 0 &&
-          chatMessages[chatMessages.length - 1].role === "user"
-        ) {
-          needsAiResponse.current = true;
-        }
-        return;
-      }
-
-      // Fetch chat messages from server
-      startTransition(async () => {
-        try {
-          const response = await fetch(`/api/chats/${chatId}/messages`);
-          const data = await response.json();
-
-          if (Array.isArray(data.messages)) {
-            // Store the messages
-            setChats((prev) => ({
-              ...prev,
-              [chatId]: data.messages,
-            }));
-
-            // Only update messages if this is still the active chat
-            if (activeChat === chatId) {
-              setMessages(data.messages);
-
-              // Check if we need to trigger the AI
-              if (
-                data.messages.length > 0 &&
-                data.messages[data.messages.length - 1].role === "user"
-              ) {
-                needsAiResponse.current = true;
-              }
-            }
-          } else {
-            console.error("Invalid message format received:", data);
-            if (activeChat === chatId) {
-              setMessages([]);
-            }
-          }
-        } catch (error) {
-          console.error("Failed to load chat:", error);
-
-          if (activeChat === chatId) {
-            setMessages([]);
-          }
-        }
-      });
-    },
-    [activeChat, chats, setMessages]
-  );
-
   const context: ChatContextType = {
     chats,
     activeChat,
@@ -364,8 +410,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     createChat,
     setActiveChat: setActiveChatWithLoad,
     messages,
-    input,
-    setInput,
+    input: getCurrentInput(),
+    setInput: setCurrentInput,
     handleSubmit,
     status,
     stop,

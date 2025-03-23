@@ -32,7 +32,7 @@ export function NavMain({
           </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
-      <Feedback />
+      {/* <Feedback /> */}
     </SidebarMenu>
   );
 }
