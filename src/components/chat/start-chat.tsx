@@ -3,8 +3,8 @@
 import type React from "react";
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
-import { useAuth } from "@/providers/auth-provider";
-import { useChat } from "@/providers/chat-provider";
+import { useAuth } from "@/auth/client/provider";
+import { useChat } from "@/chat/chat-provider";
 import { useDebouncedCallback } from "use-debounce";
 import { ChatInput } from "./chat-input";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";

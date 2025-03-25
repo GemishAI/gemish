@@ -1,7 +1,7 @@
 "use client";
 
 import { StartChat } from "@/components/chat/start-chat";
-import { useChat } from "@/providers/chat-provider";
+import { useChat } from "@/chat/chat-provider";
 import { useEffect } from "react";
 
 export default function ChatPage() {

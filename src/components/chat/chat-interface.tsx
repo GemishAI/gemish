@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { useChat } from "@/providers/chat-provider";
+import { useChat } from "@/chat/chat-provider";
 import {
   Message as MessageComponent,
   MessageAvatar,

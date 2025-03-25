@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/sidebar/components/theme-toggle";
 import Link from "next/link";
-import { signOut, useAuth } from "@/providers/auth-provider";
+import { signOut, useAuth } from "@/auth/client/provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 

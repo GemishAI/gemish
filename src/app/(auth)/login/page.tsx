@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "@/providers/auth-provider";
+import { signIn } from "@/auth/client/provider";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";

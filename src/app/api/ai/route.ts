@@ -40,12 +40,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const ratelimit = await limiter.limit(session.user.id);
-
-  if (!ratelimit.success) {
-    return new NextResponse("Please try again later", { status: 429 });
-  }
-
   if (!message || !id) {
     return NextResponse.json(
       { error: "Message and chat ID are required" },

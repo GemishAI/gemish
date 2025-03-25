@@ -2,10 +2,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { NuqsAdapterProvider } from "./nuqs-adapter-provider";
 import { ThemeProvider } from "./theme-provider";
 import { SidebarProviderWrapper } from "@/components/sidebar/sidebar-provider-wrapper";
-import { ChatProvider } from "./chat-provider";
+import { ChatProvider } from "../chat/chat-provider";
 import { SWRProvider } from "./swr-provider";
 import { PostHogProvider } from "./posthog-provider";
-import { AuthProvider } from "./auth-provider";
+import { AuthProvider } from "../auth/client/provider";
 
 interface BaseProviderProps {
   children: React.ReactNode;
