@@ -3,7 +3,7 @@ import { customProvider, wrapLanguageModel } from "ai";
 import { cacheMiddleware } from "./cache-middleware";
 
 const searchModel = wrapLanguageModel({
-  model: google("gemini-2.0-flash-001", { useSearchGrounding: true }),
+  model: google("gemini-2.0-pro-exp-02-05", { useSearchGrounding: true }),
   middleware: cacheMiddleware,
 });
 

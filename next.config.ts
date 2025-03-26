@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: [
+    "got",
+    "metascraper",
+    "metascraper-description",
+    "metascraper-image",
+    "metascraper-title",
+    "jsdom",
+    "keyv",
+  ],
   async rewrites() {
     return [
       {

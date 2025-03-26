@@ -41,6 +41,7 @@
     "@vercel/functions": "^2.0.0",
     "ai": "^4.2.5",
     "better-auth": "~1.2.4",
+    "canvas": "^3.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -50,9 +51,16 @@
     "drizzle-kit": "^0.30.5",
     "drizzle-orm": "^0.41.0",
     "drizzle-zod": "^0.7.0",
+    "got": "^14.4.6",
+    "jsdom": "^26.0.0",
+    "keyv": "^5.3.2",
     "lucide-react": "^0.484.0",
     "marked": "^15.0.7",
     "marked-react": "^3.0.0",
+    "metascraper": "^5.46.9",
+    "metascraper-description": "^5.46.5",
+    "metascraper-image": "^5.46.5",
+    "metascraper-title": "^5.46.5",
     "motion": "^12.6.0",
     "next": "15.2.4",
     "next-sitemap": "^4.2.3",
@@ -89,5 +97,19 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "tailwindcss": "^4.0.16",
     "typescript": "^5.8.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "keyv": "4.5.4",
+      "jsdom": "25.0.1"
+    },
+    "onlyBuiltDependencies": [
+      "canvas",
+      "core-js",
+      "es5-ext",
+      "esbuild",
+      "re2",
+      "sharp"
+    ]
   }
 }
