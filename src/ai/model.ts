@@ -12,7 +12,7 @@ const defaultModel = wrapLanguageModel({
   middleware: cacheMiddleware,
 });
 
-const reasoningModel = wrapLanguageModel({
+const thinkModel = wrapLanguageModel({
   model: google("gemini-2.5-pro-exp-03-25"),
   middleware: cacheMiddleware,
 });
@@ -23,6 +23,6 @@ export const gemish = customProvider({
     normal: defaultModel,
     search: searchModel,
     image: google("gemini-2.0-flash-exp"),
-    reasoning: reasoningModel,
+    think: thinkModel,
   },
 });
