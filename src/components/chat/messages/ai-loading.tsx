@@ -1,8 +1,8 @@
-import {
-  Message as MessageComponent,
-  MessageAvatar,
-} from "@/components/prompt-kit/message";
 import { Loader } from "@/components/prompt-kit/loader";
+import {
+  MessageAvatar,
+  Message as MessageComponent,
+} from "@/components/prompt-kit/message";
 import type { Message } from "ai";
 
 interface AILoadingProps {
@@ -18,7 +18,7 @@ export function AILoading({ status, messages }: AILoadingProps) {
         messages[messages.length - 1].role === "user" && (
           <MessageComponent className="justify-start">
             <MessageAvatar src="/avatars/gemini.png" alt="AI" fallback="AI" />
-            <Loader text="Thinking..." variant="text-shimmer" size="lg" />
+            <Loader variant="typing" size="lg" />
           </MessageComponent>
         )}
     </>
