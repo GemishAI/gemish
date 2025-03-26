@@ -23,12 +23,11 @@ interface Source {
 interface Metadata {
   title?: string;
   description?: string;
-  image?: string;
+  favicon?: string;
+  finalUrl?: string;
 }
 
 interface EnrichedSource extends Source {
-  domain: string;
-  favicon: string;
   metadata: Metadata | null;
   isLoading: boolean;
 }
@@ -71,11 +70,11 @@ const SourceItem = ({
   const { metadata, isLoading } = useSourceMetadata(source.url);
 
   // Title fallback logic
-  const title = metadata?.title || source.domain;
+  const title = metadata?.title || metadata?.finalUrl;
 
   return (
     <Link
-      href={source.url}
+      href={metadata?.finalUrl!}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center bg-secondary border border-muted rounded-md px-3 py-2 hover:bg-muted transition-colors min-w-60 max-w-60"
@@ -86,7 +85,7 @@ const SourceItem = ({
         </span>
         <div className="w-5 h-5 mr-2 flex-shrink-0 bg-white rounded-sm overflow-hidden shadow-sm">
           <img
-            src={source.favicon}
+            src={metadata?.favicon}
             alt=""
             width={20}
             height={20}
@@ -102,7 +101,7 @@ const SourceItem = ({
             )}
           </div>
           <div className="text-xs text-muted-foreground truncate">
-            {source.domain}
+            {metadata?.finalUrl}
           </div>
         </div>
       </div>
@@ -122,7 +121,7 @@ const SourceDetail = ({
 
   return (
     <Link
-      href={source.url}
+      href={metadata?.finalUrl!}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-start bg-secondary/50 border border-muted rounded-md p-3 hover:bg-muted transition-colors w-full"
@@ -130,25 +129,43 @@ const SourceDetail = ({
       <div className="flex flex-col gap-3 w-full">
         <h1 className="text-base font-medium text-foreground">
           {index + 1}.{" "}
-          {isLoading ? "Loading..." : metadata?.title || source.domain}
+          {isLoading ? (
+            <Skeleton className="h-6 w-64 inline-block" />
+          ) : (
+            metadata?.title || metadata?.finalUrl
+          )}
         </h1>
 
-        {!isLoading && metadata?.description && (
-          <p className="text-sm text-foreground line-clamp-3">
-            {truncate(metadata.description, 150)}
-          </p>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ) : (
+          metadata?.description && (
+            <p className="text-sm text-foreground line-clamp-3">
+              {truncate(metadata.description, 150)}
+            </p>
+          )
         )}
+
         <div className="flex gap-2">
           <div className="size-4 flex-shrink-0 bg-white rounded overflow-hidden shadow-sm mt-0.5">
-            <img
-              src={source.favicon}
-              alt=""
-              width={32}
-              height={32}
-              className="w-8 h-8"
-            />
+            {isLoading ? (
+              <Skeleton className="w-8 h-8" />
+            ) : (
+              <img
+                src={metadata?.favicon}
+                alt=""
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+            )}
           </div>
-          <p className="text-sm text-muted-foreground mb-2">{source.domain}</p>
+          <p className="text-sm text-muted-foreground mb-2">
+            {isLoading ? <Skeleton className="h-4 w-48" /> : metadata?.finalUrl}
+          </p>
         </div>
       </div>
     </Link>
@@ -166,12 +183,8 @@ export const AISourcesList: React.FC<AISourcesListProps> = ({ sources }) => {
 
   // Process sources to add domain and favicon
   const processedSources: EnrichedSource[] = sources.map((source) => {
-    const url = new URL(source.url);
-    const domain = url.hostname.replace(/^www\./, "");
     return {
       ...source,
-      domain,
-      favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
       metadata: null,
       isLoading: true,
     };
