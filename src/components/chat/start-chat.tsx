@@ -1,20 +1,20 @@
 "use client";
 
-import type React from "react";
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import { toast } from "sonner";
-import { useAuth } from "@/auth/client/provider";
+import { useAuth } from "@/auth/client/hooks";
 import { useChat } from "@/chat/chat-provider";
-import { useDebouncedCallback } from "use-debounce";
-import { ChatInput } from "./chat-input";
 import { PromptSuggestion } from "@/components/prompt-kit/prompt-suggestion";
 import {
-  GlobeIcon,
   CodeIcon,
-  PaintbrushIcon,
+  GlobeIcon,
   NotebookTextIcon,
+  PaintbrushIcon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useDebouncedCallback } from "use-debounce";
+import { ChatInput } from "./chat-input";
 
 export function StartChat() {
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
@@ -24,16 +24,7 @@ export function StartChat() {
   const [activeCategory, setActiveCategory] = useState("");
 
   // Use the centralized chat context
-  const {
-    input,
-    setInput,
-    createChat,
-    stop,
-    fileInputRef,
-    handleFileChange,
-    fileList,
-    removeFile,
-  } = useChat();
+  const { input, setInput, createChat, stop } = useChat();
 
   // Set up time update interval
   useEffect(() => {
@@ -274,10 +265,6 @@ export function StartChat() {
           handleSend={handleSend}
           status={status}
           stop={stop}
-          fileInputRef={fileInputRef}
-          handleFileChange={handleFileChange}
-          fileList={fileList}
-          removeFile={removeFile}
         />
       </motion.div>
     </motion.div>

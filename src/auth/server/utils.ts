@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "./auth";
 import { AUTH_ROUTES } from "../constants";
+import { auth } from "./auth";
 
 /**
  * Get the current session server-side

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useFile, type FileWithMetadata } from "./useFile";
 
 export type Attachment = {
@@ -23,37 +23,33 @@ export function useFileUpload(fileHandlerOptions?: { autoUpload?: boolean }) {
   const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
   const [isUploading, startTransition] = useTransition();
 
-  // Handle auto-upload when files are added
-  const handleFilesAdded = useCallback(
-    (newFiles: FileWithMetadata[]) => {
-      if (fileHandlerOptions?.autoUpload) {
-        // Create upload status objects for each file
-        const newFileUploads = newFiles.map(({ id, file }) => ({
-          id,
-          file,
-          progress: 0,
-          status: "pending" as const,
-        }));
+  // Handle auto-upload when files are added - now enabled by default
+  const handleFilesAdded = useCallback((newFiles: FileWithMetadata[]) => {
+    // Create upload status objects for each file
+    const newFileUploads = newFiles.map(({ id, file }) => ({
+      id,
+      file,
+      progress: 0,
+      status: "pending" as const,
+    }));
 
-        // Add new uploads to state
-        setFileUploads((prev) => [...prev, ...newFileUploads]);
+    // Add new uploads to state
+    setFileUploads((prev) => [...prev, ...newFileUploads]);
 
-        // Start the upload process
-        startTransition(async () => {
-          await Promise.all(
-            newFileUploads.map((fileUpload) =>
-              uploadFileToS3(fileUpload.file, fileUpload.id)
-            )
-          );
-        });
-      }
-    },
-    [fileHandlerOptions?.autoUpload]
-  );
+    // Start the upload process immediately
+    startTransition(async () => {
+      await Promise.all(
+        newFileUploads.map((fileUpload) =>
+          uploadFileToS3(fileUpload.file, fileUpload.id)
+        )
+      );
+    });
+  }, []);
 
   // Integrate with useFile for file selection and validation
   const { files, removeFile, clearFiles, ...fileHandlerRest } = useFile({
     onFilesAdded: handleFilesAdded,
+    autoUpload: true, // Enable auto-upload by default
   });
 
   // Upload a single file to S3
@@ -214,10 +210,11 @@ export function useFileUpload(fileHandlerOptions?: { autoUpload?: boolean }) {
     isUploading,
     fileUploads,
     attachments: getCurrentAttachments(),
+    files, // Expose files for UI feedback
     ...fileHandlerRest,
 
     // Actions
-    uploadFiles,
+    uploadFiles, // Keep for manual upload if needed
     cancelUpload,
     clearUploads,
   };

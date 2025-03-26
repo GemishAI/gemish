@@ -25,8 +25,6 @@ export const env = createEnv({
     AWS_REGION: z.string().min(1),
     AWS_S3_BUCKET_NAME: z.string().min(1),
 
-    CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().min(1),
-
     UNKEY_ROOT_KEY: z.string().min(1),
     UNKEY_API_ID: z.string().min(1),
   },
@@ -43,9 +41,6 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 
     GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-
-    CLOUDFLARE_TURNSTILE_SECRET_KEY:
-      process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
 
     NEXT_PUBLIC_GEMISH_API_KEY: process.env.NEXT_PUBLIC_GEMISH_API_KEY,
     UNKEY_ROOT_KEY: process.env.UNKEY_ROOT_KEY,

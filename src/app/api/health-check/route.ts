@@ -1,11 +1,11 @@
 // app/api/health-check/route.ts
 
-import limiter from "@/lib/ratelimit";
-import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { withUnkey } from "@unkey/nextjs";
+import { auth } from "@/auth/server/auth";
 import { env } from "@/env.mjs";
+import limiter from "@/lib/ratelimit";
+import { withUnkey } from "@unkey/nextjs";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
 export const HEAD = withUnkey(
   async (req) => {

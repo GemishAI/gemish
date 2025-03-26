@@ -1,22 +1,20 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
-import { chat, message, type Chat } from "@/server/db/schema";
-import { headers } from "next/headers";
-import { eq, and, desc, asc, ilike, count } from "drizzle-orm";
-import { generateText } from "ai";
-import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
-import { generateId } from "ai";
 import { gemish } from "@/ai/model";
-import {
-  redis,
-  getCompressed,
-  setCompressed,
-  invalidateUserChatListCache,
-  invalidateAllUserChatCaches,
-} from "@/lib/redis";
-import { withUnkey } from "@unkey/nextjs";
+import { auth } from "@/auth/server/auth";
+import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
 import { env } from "@/env.mjs";
+import {
+  getCompressed,
+  invalidateChatMessagesCache,
+  invalidateUserChatListCache,
+  setCompressed,
+} from "@/lib/redis";
+import { db } from "@/server/db";
+import { chat } from "@/server/db/schema";
+import { withUnkey } from "@unkey/nextjs";
+import { generateText } from "ai";
+import { and, count, desc, eq, ilike } from "drizzle-orm";
+import { headers } from "next/headers";
+import { NextResponse, type NextRequest } from "next/server";
 
 // Background title generation with AI
 async function queueTitleGeneration(
@@ -100,69 +98,62 @@ export const GET = withUnkey(
       hasMore,
     };
 
-    // Cache with compression
-    await setCompressed(cacheKey, responseData, { ex: 300 });
+    // Check size before caching to prevent Redis 1MB limit issues
+    const dataString = JSON.stringify(responseData);
+    const estimatedSizeKB = dataString.length / 1024;
+
+    // Only cache if the estimated size is under 800KB (allowing for compression overhead)
+    if (estimatedSizeKB < 800) {
+      await setCompressed(cacheKey, responseData, { ex: 300 });
+    }
 
     return NextResponse.json(responseData, { status: 200 });
   },
   { apiId: env.UNKEY_API_ID }
 );
 
-export const POST = withUnkey(
-  async (request: NextRequest) => {
-    const body = await request.json();
-    const { id, message: messageText } = body;
+export const POST = async (request: NextRequest) => {
+  const body = await request.json();
+  const { id, message: messageText } = body;
 
-    const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: await headers() });
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    try {
-      // Start a transaction to ensure both chat and message are created
-      await db.transaction(async (tx) => {
-        // Create the chat
-        await tx.insert(chat).values({
-          id,
-          title: "(New Chat)",
-          userId: session.user.id,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-
-        // If a message was provided, store it immediately
-        if (messageText) {
-          await tx.insert(message).values({
-            id: generateId(),
-            chatId: id,
-            role: "user",
-            parts: [],
-            experimental_attachments: [],
-            annotations: [],
-            content: "",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-        }
+  try {
+    // Start a transaction to ensure both chat and message are created
+    await db.transaction(async (tx) => {
+      // Create the chat
+      await tx.insert(chat).values({
+        id,
+        title: "(New Chat)",
+        userId: session.user.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
+    });
 
-      // Invalidate user chat cache
-      await invalidateUserChatListCache(session.user.id);
+    // Invalidate user chat cache
+    await invalidateUserChatListCache(session.user.id);
 
-      // Queue the AI title generation in the background if we have a message
-      if (messageText) {
-        queueTitleGeneration(id, messageText, session.user.id);
-      }
-
-      return NextResponse.json({ id }, { status: 200 });
-    } catch (error) {
-      console.error("Error creating chat:", error);
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 }
-      );
+    // If a message was created, also invalidate any message cache for this chat
+    if (messageText) {
+      await invalidateChatMessagesCache(session.user.id, id);
     }
-  },
-  { apiId: env.UNKEY_API_ID }
-);
+
+    // Queue the AI title generation in the background if we have a message
+    if (messageText) {
+      queueTitleGeneration(id, messageText, session.user.id);
+    }
+
+    return NextResponse.json({ id }, { status: 200 });
+  } catch (error) {
+    console.error("Error creating chat:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};

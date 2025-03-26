@@ -1,8 +1,7 @@
 import { db } from "@/server/db";
-import { message } from "@/server/db/schema";
-import { eq, asc, and } from "drizzle-orm";
+import { chat, message } from "@/server/db/schema";
 import type { Message as AIMessage } from "ai";
-import { chat } from "@/server/db/schema";
+import { and, asc, eq } from "drizzle-orm";
 
 /**
  * Loads all messages for a specific chat
@@ -18,12 +17,11 @@ export async function loadChatMessages(chatId: string): Promise<AIMessage[]> {
       .execute();
 
     // Transform database messages to AI SDK message format
-    return messages.map((msg) => ({
-      id: msg.id,
-      role: msg.role as "user" | "assistant" | "system" | "data",
-      content: msg.content!,
-      createdAt: new Date(msg.createdAt), // Ensure it's a Date object
-      experimental_attachments: msg.experimental_attachments || undefined,
+    return messages.map(({ chatId, updatedAt, ...rest }) => ({
+      ...rest,
+      role: rest.role as "user" | "assistant" | "system" | "data",
+      content: rest.content!,
+      experimental_attachments: rest.experimental_attachments || undefined,
     }));
   } catch (error) {
     console.error("Error loading chat messages:", error);

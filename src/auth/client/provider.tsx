@@ -1,8 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode } from "react";
 import { createAuthClient, type BetterFetchError } from "better-auth/react";
-import { BASE_URL } from "../constants";
+import { createContext, ReactNode } from "react";
+
+const BASE_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : "https://gemish.vercel.app";
 
 const authClient = createAuthClient({
   baseURL: BASE_URL,

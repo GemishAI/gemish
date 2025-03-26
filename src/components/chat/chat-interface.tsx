@@ -1,20 +1,22 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
-import { useCallback, useEffect, useRef } from "react";
-import { useDebouncedCallback } from "use-debounce";
 import { useChat } from "@/chat/chat-provider";
+import { ChatContainer } from "@/components/prompt-kit/chat-container";
 import {
-  Message as MessageComponent,
   MessageAvatar,
+  Message as MessageComponent,
   MessageContent,
 } from "@/components/prompt-kit/message";
-import { ChatContainer } from "@/components/prompt-kit/chat-container";
-import { ChatMarkdown } from "./chat-markdown";
-import { ChatInput } from "./chat-input";
+import { motion } from "motion/react";
+import { useCallback, useEffect, useRef } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { LoaderSpinner } from "../loader-spinner";
+import { ChatInput } from "./chat-input";
+import { ChatMarkdown } from "./chat-markdown";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
+import { AIReasoning } from "./messages/ai-reasoning";
+import { AISourcesList } from "./messages/ai-sources";
 import { MessageAttachments } from "./messages/message-attachments";
 
 interface ChatInterfaceProps {
@@ -35,10 +37,6 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
     isChatLoading,
     error,
     reload,
-    fileInputRef,
-    handleFileChange,
-    fileList,
-    removeFile,
   } = useChat();
 
   useEffect(() => {
@@ -119,6 +117,17 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                   </div>
                 ) : (
                   <div className="w-full flex flex-col items-start gap-2">
+                    {/* Reasoning Component */}
+                    {message.parts &&
+                      message.parts.filter((part) => part.type === "reasoning")
+                        .length > 0 && (
+                        <AIReasoning
+                          reasoningParts={message.parts.filter(
+                            (part) => part.type === "reasoning"
+                          )}
+                        />
+                      )}
+
                     {/* Render text parts after reasoning */}
                     {message.parts &&
                       message.parts.map((part, index) => {
@@ -132,6 +141,17 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         }
                         return null;
                       })}
+
+                    {/* Check if sources exists in message.parts */}
+                    {message.parts &&
+                      message.parts.filter((part) => part.type === "source")
+                        .length > 0 && (
+                        <AISourcesList
+                          sources={message.parts
+                            .filter((part) => part.type === "source")
+                            .map((part) => part.source)}
+                        />
+                      )}
                   </div>
                 )}
               </MessageComponent>
@@ -159,10 +179,6 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
             handleSend={handleSend}
             status={status}
             stop={stop}
-            fileInputRef={fileInputRef}
-            handleFileChange={handleFileChange}
-            fileList={fileList}
-            removeFile={removeFile}
           />
         </div>
       </motion.div>

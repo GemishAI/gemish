@@ -1,26 +1,29 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { appendClientMessage, appendResponseMessages, streamText } from "ai";
-import { saveChat } from "@/server/db/chat-store";
-import {
-  loadChatMessages,
-  validateChatOwnership,
-} from "@/server/db/message-loader";
-import { type Message, smoothStream, wrapLanguageModel } from "ai";
-import { createIdGenerator } from "ai";
 import { gemish } from "@/ai/model";
+import { auth } from "@/auth/server";
 import {
-  WEB_SEARCH_SYSTEM_PROMPT,
   CONVERSATIONAL_AI_PROMPT,
   FILE_ANALYSIS_AI_PROMPT,
+  WEB_SEARCH_SYSTEM_PROMPT,
 } from "@/config/system-prompts";
 import {
   invalidateChatMessagesCache,
   invalidateUserChatListCache,
 } from "@/lib/redis";
-
-import limiter from "@/lib/ratelimit";
+import { saveChat } from "@/server/db/chat-store";
+import {
+  loadChatMessages,
+  validateChatOwnership,
+} from "@/server/db/message-loader";
+import {
+  appendClientMessage,
+  appendResponseMessages,
+  createIdGenerator,
+  type Message,
+  smoothStream,
+  streamText,
+} from "ai";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
 export const maxDuration = 30;
 
@@ -59,48 +62,70 @@ export async function POST(req: Request) {
     const previousMessages = await loadChatMessages(id);
 
     const messages = appendClientMessage({
-      messages: previousMessages[0].content === "" ? [] : previousMessages,
+      messages: !previousMessages ? [] : previousMessages,
       message,
     });
 
-    console.log(JSON.stringify(messages, null, 2), "API");
-
-    // check if user has sent an attachment
+    // Check if any message has attachments
     const messagesHaveAttachments = messages.some(
-      (message) => message.experimental_attachments
+      (msg) =>
+        msg?.experimental_attachments && msg.experimental_attachments.length > 0
     );
 
+    // Select the appropriate system prompt based on model and attachments
+    let systemPrompt = CONVERSATIONAL_AI_PROMPT; // Default to conversational
+
+    if (model === "search") {
+      systemPrompt = WEB_SEARCH_SYSTEM_PROMPT;
+    } else if (messagesHaveAttachments) {
+      systemPrompt = FILE_ANALYSIS_AI_PROMPT;
+    }
+
+    // Select the appropriate model based on attachments
+    const selectedModel = messagesHaveAttachments
+      ? gemish.languageModel("image")
+      : gemish.languageModel(model);
+
     const result = streamText({
-      model: messagesHaveAttachments
-        ? gemish.languageModel("image")
-        : gemish.languageModel(model),
+      model: selectedModel,
       messages,
-      system:
-        (messagesHaveAttachments && FILE_ANALYSIS_AI_PROMPT) ||
-        CONVERSATIONAL_AI_PROMPT,
+      system: systemPrompt,
       experimental_transform: smoothStream({
         delayInMs: 20,
         chunking: "word",
       }),
       experimental_generateMessageId: createIdGenerator({
         prefix: "msgs",
-        size: 16,
+        separator: "_",
       }),
       async onFinish({ response }) {
-        await saveChat({
-          id,
-          userId: session.user.id,
-          messages: appendResponseMessages({
+        try {
+          const messagesToSave = appendResponseMessages({
             messages: messages,
             responseMessages: response.messages,
-          }),
-        });
-        await invalidateChatMessagesCache(session.user.id, id);
-        await invalidateUserChatListCache(session.user.id);
+          });
+
+          console.log(
+            JSON.stringify(messagesToSave, null, 2),
+            "messagesToSave"
+          );
+          await saveChat({
+            id,
+            userId: session.user.id,
+            messages: messagesToSave,
+          });
+
+          // Only invalidate caches if save was successful
+          await Promise.all([
+            invalidateChatMessagesCache(session.user.id, id),
+            invalidateUserChatListCache(session.user.id),
+          ]);
+        } catch (error) {
+          console.error("Error saving chat messages:", error);
+          // Don't throw here - we want to complete the stream even if saving fails
+        }
       },
     });
-
-    console.log(JSON.stringify(result.sources, null, 2), "sources");
 
     // consume the stream to ensure it runs to completion & triggers onFinish
     // even when the client response is aborted:

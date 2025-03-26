@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, LogIn, Settings } from "lucide-react";
+import { ThemeToggle } from "@/components/sidebar/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,16 +17,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/sidebar/components/theme-toggle";
+import { ChevronsUpDown, LogIn, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
-import { signOut, useAuth } from "@/auth/client/provider";
+
+import { useAuth } from "@/auth/client/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 
 export function NavUser() {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const { session, isPending, error } = useAuth();
+  const { session, isPending, error, signOut } = useAuth();
 
   if (isPending) {
     return (

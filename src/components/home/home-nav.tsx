@@ -1,10 +1,9 @@
+import { getServerSession } from "@/auth/server";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { Button } from "../ui/button";
 
 export async function HomeNav() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getServerSession();
   return (
     <header className="w-full h-16 fixed top-0 inset-x-0 z-50">
       <div className="container max-w-6xl mx-auto backdrop-blur-lg">

@@ -4,7 +4,7 @@ export const BASE_URL =
     : "https://gemish.vercel.app";
 
 export const AUTH_ROUTES = {
-  SIGN_IN: "/auth/login",
+  SIGN_IN: "/login",
   PROFILE: "/account",
   DASHBOARD: "/chat",
 };

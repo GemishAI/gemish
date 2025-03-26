@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { useDropzone, FileRejection } from "react-dropzone";
+import { useCallback, useRef, useState } from "react";
+import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 // Utility function for formatting file sizes
@@ -27,6 +27,7 @@ export type FileError = {
 
 export function useFile(options?: {
   onFilesAdded?: (files: FileWithMetadata[]) => void;
+  autoUpload?: boolean;
 }) {
   const [files, setFiles] = useState<FileWithMetadata[]>([]);
   const [fileErrors, setFileErrors] = useState<FileError[]>([]);
@@ -71,16 +72,12 @@ export function useFile(options?: {
         };
       });
 
-      setFiles((prevFiles) => {
-        const updatedFiles = [...prevFiles, ...newFiles];
+      // Immediately call onFilesAdded callback if provided
+      if (options?.onFilesAdded) {
+        options.onFilesAdded(newFiles);
+      }
 
-        // Call onFilesAdded callback if provided
-        if (options?.onFilesAdded) {
-          options.onFilesAdded(newFiles);
-        }
-
-        return updatedFiles;
-      });
+      setFiles((prevFiles) => [...prevFiles, ...newFiles]);
     },
     [files.length, options]
   );
@@ -120,7 +117,7 @@ export function useFile(options?: {
     setFileErrors((prevErrors) => [...prevErrors, ...newErrors]);
   }, []);
 
-  // Configure react-dropzone
+  // Configure react-dropzone with immediate upload
   const { getRootProps, getInputProps, isDragAccept, isDragReject, open } =
     useDropzone({
       onDrop: (acceptedFiles, rejectedFiles) => {
@@ -135,15 +132,15 @@ export function useFile(options?: {
       noKeyboard: true,
       onDragEnter: () => setIsDragActive(true),
       onDragLeave: () => setIsDragActive(false),
+      multiple: true, // Ensure multiple file upload is enabled
     });
 
-  // Handle file input change for traditional file inputs
+  // Handle file input change with immediate upload
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const inputFiles = event.target.files;
       if (!inputFiles || inputFiles.length === 0) return;
 
-      // Filter files based on type and size
       const acceptedFiles: File[] = [];
       const rejectedFiles: FileRejection[] = [];
 
@@ -154,7 +151,6 @@ export function useFile(options?: {
             errors: [{ code: "file-too-large", message: "File is too large" }],
           });
         } else {
-          // Simple mime type check
           const isAccepted =
             file.type.startsWith("image/") || file.type === "application/pdf";
 

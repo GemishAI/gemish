@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth/server/auth";
+import { env } from "@/env.mjs";
+import limiter from "@/lib/ratelimit";
+import {
+  invalidateChatMessagesCache,
+  invalidateUserChatListCache,
+} from "@/lib/redis";
 import { db } from "@/server/db";
 import { chat } from "@/server/db/schema";
-import { headers } from "next/headers";
-import { and, eq } from "drizzle-orm";
-import { z } from "zod";
-import {
-  invalidateUserChatListCache,
-  invalidateChatMessagesCache,
-} from "@/lib/redis";
-import limiter from "@/lib/ratelimit";
-import { env } from "@/env.mjs";
 import { withUnkey } from "@unkey/nextjs";
+import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const patchSchema = z.object({
   title: z.string().min(1).max(100),

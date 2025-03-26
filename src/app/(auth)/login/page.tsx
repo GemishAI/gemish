@@ -1,20 +1,18 @@
 "use client";
 
-import { signIn } from "@/auth/client/provider";
+import { useAuth } from "@/auth/client/hooks";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { toast } from "sonner";
 import { GithubIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { usePostHog } from "posthog-js/react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const providers = ["github", "google"] as const;
 type Provider = (typeof providers)[number];
 
 export default function Login() {
+  const { signIn } = useAuth();
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
-  const posthog = usePostHog();
-  const turnstileToken = "0x4AAAAAABBxvHiCvz0rlP2q";
 
   async function handleSocialLogin(provider: Provider) {
     setLoadingProvider(provider);
@@ -23,8 +21,10 @@ export default function Login() {
         provider,
         callbackURL: "/chat",
         fetchOptions: {
-          headers: {
-            "x-captcha-response": turnstileToken,
+          onError(context) {
+            console.log(context);
+            toast.error("Authentication failed. Please try again later.");
+            setLoadingProvider(null);
           },
         },
       });
@@ -49,7 +49,6 @@ export default function Login() {
           <Button
             onClick={() => {
               handleSocialLogin("github");
-              posthog.capture("github_sign_in");
             }}
             variant="outline"
             disabled={loadingProvider !== null}
@@ -66,7 +65,6 @@ export default function Login() {
           <Button
             onClick={() => {
               handleSocialLogin("google");
-              posthog.capture("google_sign_in");
             }}
             variant="outline"
             disabled={loadingProvider !== null}

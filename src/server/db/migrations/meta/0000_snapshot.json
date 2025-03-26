@@ -1,5 +1,5 @@
 {
-  "id": "04a7a91c-848f-4fef-ba57-3ef145981218",
+  "id": "c6bca5b8-8c36-4188-83b2-d1386af3cc16",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -146,7 +146,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'New Chat'"
+          "default": "'(New Chat)'"
         },
         "created_at": {
           "name": "created_at",
@@ -211,14 +211,14 @@
           "primaryKey": true,
           "notNull": true
         },
-        "role": {
-          "name": "role",
+        "chat_id": {
+          "name": "chat_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "chat_id": {
-          "name": "chat_id",
+        "role": {
+          "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -227,32 +227,34 @@
           "name": "content",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "annotations": {
           "name": "annotations",
           "type": "json",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'[]'::json"
         },
         "parts": {
           "name": "parts",
           "type": "json",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'[]'::json"
         },
         "experimental_attachments": {
           "name": "experimental_attachments",
           "type": "json",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'[]'::json"
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         },
         "updated_at": {
           "name": "updated_at",

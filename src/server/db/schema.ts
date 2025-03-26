@@ -1,4 +1,5 @@
-import type { Attachment, JSONValue } from "ai";
+import { IdGenerator } from "@/config/id-generator";
+import type { Message } from "ai";
 import {
   boolean,
   index,
@@ -6,48 +7,9 @@ import {
   pgTable,
   text,
   timestamp,
-  varchar,
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { IdGenerator } from "@/config/id-generator";
-
-type TextUIPart = {
-  type: "text";
-  text: string;
-};
-
-type ReasoningUIPart = {
-  type: "reasoning";
-  reasoning: string;
-};
-
-type ToolInvocationUIPart = {
-  type: "tool-invocation";
-  toolInvocation: {
-    state: "partial-call" | "call" | "result";
-    toolCallId: string;
-    toolName: string;
-    args: any;
-    result?: any;
-  };
-};
-
-type SourceUIPart = {
-  type: "source";
-  source: {
-    sourceType: "url";
-    id: string;
-    url: string;
-    title?: string;
-  };
-};
-
-type MessagePart =
-  | TextUIPart
-  | ReasoningUIPart
-  | ToolInvocationUIPart
-  | SourceUIPart;
 
 export const user = pgTable(
   "user",
@@ -144,27 +106,27 @@ export type Chat = z.infer<typeof chatSchema>;
 export const message = pgTable(
   "message",
   {
-    id: text("id").primaryKey().notNull(),
-    role: text("role", {
-      enum: ["system", "user", "assistant", "data"],
-    }).notNull(),
+    id: text("id").primaryKey(),
     chatId: text("chat_id")
       .notNull()
       .references(() => chat.id, { onDelete: "cascade" }),
-    content: text("content"),
-    annotations: json("annotations").$type<Array<JSONValue>>().notNull(), // Explicitly typed as array of any
-    parts: json("parts")
+    role: text("role").$type<Message["role"]>().notNull(),
+    content: text("content").$type<Message["content"]>(),
+    annotations: json("annotations")
+      .$type<Message["annotations"]>()
+      .default([])
+      .notNull(),
+    parts: json("parts").$type<Message["parts"]>().default([]).notNull(),
+    experimental_attachments: json("experimental_attachments")
+      .$type<Message["experimental_attachments"]>()
+      .default([]),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .$type<Message["createdAt"]>()
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
       .notNull()
-      .$type<
-        Array<
-          TextUIPart | ReasoningUIPart | ToolInvocationUIPart | SourceUIPart
-        >
-      >(), // Union type for parts
-    experimental_attachments: json("experimental_attachments").$type<
-      Array<Attachment>
-    >(), // Typed attachments
-    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return {

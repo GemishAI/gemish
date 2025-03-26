@@ -17,20 +17,20 @@ CREATE TABLE "account" (
 CREATE TABLE "chat" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
-	"title" text DEFAULT 'New Chat',
+	"title" text DEFAULT '(New Chat)',
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "message" (
 	"id" text PRIMARY KEY NOT NULL,
-	"role" text NOT NULL,
 	"chat_id" text NOT NULL,
-	"content" text NOT NULL,
-	"annotations" json NOT NULL,
-	"parts" json NOT NULL,
-	"experimental_attachments" json,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"role" text NOT NULL,
+	"content" text,
+	"annotations" json DEFAULT '[]'::json NOT NULL,
+	"parts" json DEFAULT '[]'::json NOT NULL,
+	"experimental_attachments" json DEFAULT '[]'::json,
+	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

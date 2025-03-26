@@ -70,14 +70,7 @@ export async function invalidateChatMessagesCache(
   userId: string,
   chatId: string
 ) {
-  // Find all paginated message cache keys for this chat
-  const messageKeys = await redis.keys(
-    `user:${userId}:chat:${chatId}:messages*`
-  );
-
-  if (messageKeys.length > 0) {
-    await redis.del(...messageKeys);
-  }
+  await redis.del(`user:${userId}:chat:${chatId}:messages`);
 }
 
 export async function invalidateAllUserChatCaches(userId: string) {

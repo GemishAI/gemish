@@ -1,11 +1,11 @@
 // app/providers.tsx
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
-import { usePostHog } from "posthog-js/react";
+import { useAuth } from "@/auth/client/hooks";
 import { env } from "@/env.mjs";
-import { useAuth } from "../auth/client/provider";
+import { usePathname, useSearchParams } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
+import { Suspense, useEffect } from "react";
 
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";

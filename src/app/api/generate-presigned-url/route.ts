@@ -1,12 +1,11 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import crypto from "node:crypto";
+import { auth } from "@/auth/server/auth";
 import { env } from "@/env.mjs";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { withUnkey } from "@unkey/nextjs";
-import { auth } from "@/lib/auth";
-import limiter from "@/lib/ratelimit";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 
 // Initialize S3 client
 const s3Client = new S3Client({

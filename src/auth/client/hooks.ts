@@ -1,7 +1,9 @@
-import { useContext, useEffect } from "react";
+"use client";
+
 import { useRouter } from "next/navigation";
-import { AuthContext } from "./provider";
+import { useContext, useEffect } from "react";
 import { AUTH_ROUTES } from "../constants";
+import { AuthContext } from "./provider";
 
 export function useAuth() {
   const context = useContext(AuthContext);

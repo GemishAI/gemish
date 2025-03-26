@@ -1,10 +1,13 @@
+import { env } from "@/env.mjs";
 import { redis } from "@/lib/redis";
+import { db } from "@/server/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { env } from "@/env.mjs";
-import { db } from "@/server/db";
-import { captcha, oneTap } from "better-auth/plugins";
-import { BASE_URL } from "../constants";
+
+const BASE_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : "https://gemish.vercel.app";
 
 const auth_prefix = env.BETTER_AUTH_REDIS_PREFIX;
 
@@ -36,15 +39,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     },
 
     set: async (key, value, ttl) => {
-      const serializedValue =
-        typeof value === "object" && value !== null
-          ? JSON.stringify(value)
-          : String(value);
-
       if (ttl) {
-        await redis.set(`${auth_prefix}:${key}`, serializedValue, { ex: ttl });
+        await redis.set(`${auth_prefix}:${key}`, value, { ex: ttl });
       } else {
-        await redis.set(`${auth_prefix}:${key}`, serializedValue);
+        await redis.set(`${auth_prefix}:${key}`, value);
       }
     },
 
@@ -59,8 +57,8 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 
   socialProviders: {
     github: {
-      clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID as string,
-      clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET as string,
+      clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
+      clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
     },
     google: {
       clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID,
@@ -74,13 +72,4 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       maxAge: 5 * 60,
     },
   },
-
-  plugins: [
-    captcha({
-      provider: "cloudflare-turnstile", // or "google-recaptcha"
-      secretKey: env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
-      endpoints: ["/login"],
-    }),
-    oneTap(),
-  ],
 });
