@@ -96,9 +96,9 @@ export async function saveChat({ id, userId, messages }: SaveChatParams) {
                 ? msg.createdAt
                 : new Date(msg.createdAt || Date.now()),
             updatedAt: new Date(),
-            annotations: msg.annotations,
-            parts: msg.parts,
-            experimental_attachments: msg.experimental_attachments,
+            annotations: msg.annotations || [],
+            parts: msg.parts || [],
+            experimental_attachments: msg.experimental_attachments || [],
           }))
         );
       }
@@ -109,9 +109,9 @@ export async function saveChat({ id, userId, messages }: SaveChatParams) {
             .update(message)
             .set({
               content: msg.content,
-              annotations: msg.annotations,
-              parts: msg.parts,
-              experimental_attachments: msg.experimental_attachments,
+              annotations: msg.annotations || [],
+              parts: msg.parts || [],
+              experimental_attachments: msg.experimental_attachments || [],
               updatedAt: new Date(),
             })
             .where(and(eq(message.chatId, id), eq(message.id, msg.id)));
