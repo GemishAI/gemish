@@ -2,11 +2,7 @@
 
 import { createAuthClient, type BetterFetchError } from "better-auth/react";
 import { createContext, ReactNode } from "react";
-
-const BASE_URL =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3000"
-    : "https://gemish.vercel.app";
+import { BASE_URL } from "../constants";
 
 const authClient = createAuthClient({
   baseURL: BASE_URL,
@@ -42,5 +38,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }

@@ -1,9 +1,13 @@
-import "@/styles/globals.css";
+import { cn } from "@/lib/utils";
 import { ChatProviders } from "@/providers/providers";
 import { inter, urbanist } from "@/styles/fonts";
-import { cn } from "@/lib/utils";
+import "@/styles/globals.css";
+import type { Metadata } from "next";
 
-export { metadata } from "@/config/metadata";
+export const metadata: Metadata = {
+  title: "Chat",
+  description: "Chat with Gemish",
+};
 
 export default function RootLayout({
   children,

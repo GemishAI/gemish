@@ -5,7 +5,7 @@ import "@/styles/globals.css";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign In - Gemish",
+  title: "Sign In",
   description: "Sign In to Gemish to get the most out of it.",
 };
 

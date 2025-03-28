@@ -3,11 +3,7 @@ import { redis } from "@/lib/redis";
 import { db } from "@/server/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-
-const BASE_URL =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3000"
-    : "https://gemish.vercel.app";
+import { BASE_URL } from "../constants";
 
 const auth_prefix = env.BETTER_AUTH_REDIS_PREFIX;
 

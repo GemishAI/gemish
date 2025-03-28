@@ -1,7 +1,6 @@
 import { gemish } from "@/ai/model";
 import { auth } from "@/auth/server/auth";
 import { TITLE_GENERATOR_SYSTEM_PROMPT } from "@/config/system-prompts";
-import { env } from "@/env.mjs";
 import {
   getCompressed,
   invalidateChatMessagesCache,
@@ -10,7 +9,6 @@ import {
 } from "@/lib/redis";
 import { db } from "@/server/db";
 import { chat } from "@/server/db/schema";
-import { withUnkey } from "@unkey/nextjs";
 import { generateText } from "ai";
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -45,72 +43,69 @@ async function queueTitleGeneration(
 }
 
 // In your chat listing endpoint
-export const GET = withUnkey(
-  async (request: NextRequest) => {
-    const session = await auth.api.getSession({ headers: await headers() });
+export const GET = async (request: NextRequest) => {
+  const session = await auth.api.getSession({ headers: await headers() });
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("query") || "";
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
-    const offset = parseInt(searchParams.get("offset") || "0", 10);
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("query") || "";
+  const limit = parseInt(searchParams.get("limit") || "20", 10);
+  const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Create a unique cache key based on user ID and query parameters
-    const cacheKey = `chats:${session.user.id}:${query}:${limit}:${offset}`;
+  // Create a unique cache key based on user ID and query parameters
+  const cacheKey = `chats:${session.user.id}:${query}:${limit}:${offset}`;
 
-    // Try to get data from cache first using the compression utility
-    const cachedData = await getCompressed(cacheKey);
-    if (cachedData) {
-      return NextResponse.json(cachedData, { status: 200 });
-    }
+  // Try to get data from cache first using the compression utility
+  const cachedData = await getCompressed(cacheKey);
+  if (cachedData) {
+    return NextResponse.json(cachedData, { status: 200 });
+  }
 
-    // Rest of your database fetch logic...
-    const chats = await db.query.chat.findMany({
-      where: and(
-        eq(chat.userId, session.user.id),
-        ilike(chat.title, `%${query}%`)
-      ),
-      limit,
-      offset,
-      orderBy: desc(chat.updatedAt),
-    });
+  // Rest of your database fetch logic...
+  const chats = await db.query.chat.findMany({
+    where: and(
+      eq(chat.userId, session.user.id),
+      ilike(chat.title, `%${query}%`)
+    ),
+    limit,
+    offset,
+    orderBy: desc(chat.updatedAt),
+  });
 
-    // Get the total count without limit and offset
-    const totalCountResult = await db
-      .select({ count: count() })
-      .from(chat)
-      .where(
-        and(eq(chat.userId, session.user.id), ilike(chat.title, `%${query}%`))
-      );
+  // Get the total count without limit and offset
+  const totalCountResult = await db
+    .select({ count: count() })
+    .from(chat)
+    .where(
+      and(eq(chat.userId, session.user.id), ilike(chat.title, `%${query}%`))
+    );
 
-    const totalCount = totalCountResult[0]?.count || 0;
+  const totalCount = totalCountResult[0]?.count || 0;
 
-    // Calculate if there are more results
-    const hasMore = offset + chats.length < totalCount;
+  // Calculate if there are more results
+  const hasMore = offset + chats.length < totalCount;
 
-    // Prepare response data
-    const responseData = {
-      chats,
-      totalCount,
-      hasMore,
-    };
+  // Prepare response data
+  const responseData = {
+    chats,
+    totalCount,
+    hasMore,
+  };
 
-    // Check size before caching to prevent Redis 1MB limit issues
-    const dataString = JSON.stringify(responseData);
-    const estimatedSizeKB = dataString.length / 1024;
+  // Check size before caching to prevent Redis 1MB limit issues
+  const dataString = JSON.stringify(responseData);
+  const estimatedSizeKB = dataString.length / 1024;
 
-    // Only cache if the estimated size is under 800KB (allowing for compression overhead)
-    if (estimatedSizeKB < 800) {
-      await setCompressed(cacheKey, responseData, { ex: 300 });
-    }
+  // Only cache if the estimated size is under 800KB (allowing for compression overhead)
+  if (estimatedSizeKB < 800) {
+    await setCompressed(cacheKey, responseData, { ex: 300 });
+  }
 
-    return NextResponse.json(responseData, { status: 200 });
-  },
-  { apiId: env.UNKEY_API_ID }
-);
+  return NextResponse.json(responseData, { status: 200 });
+};
 
 export const POST = async (request: NextRequest) => {
   const body = await request.json();

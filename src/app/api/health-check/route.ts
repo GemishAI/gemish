@@ -1,5 +1,3 @@
-// app/api/health-check/route.ts
-
 import { auth } from "@/auth/server/auth";
 import { env } from "@/env.mjs";
 import limiter from "@/lib/ratelimit";

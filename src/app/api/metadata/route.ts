@@ -154,7 +154,7 @@ export async function GET(req: Request) {
 
     const { body: html, url: finalUrl } = await got(sanitizedUrlString, {
       followRedirect: true,
-      maxRedirects: 5, // Reduced to prevent potential abuse
+      maxRedirects: 10, // Reduced to prevent potential abuse
       cache: false,
       headers: {
         "User-Agent":
@@ -177,7 +177,7 @@ export async function GET(req: Request) {
       title: metadata.title || "No title found",
       description: metadata.description || "No description found",
       favicon: metadata.image || getFaviconUrl(finalUrl),
-      finalUrl: finalUrl,
+      finalUrl: metadata.url,
     };
 
     return NextResponse.json(response);

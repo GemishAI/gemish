@@ -12,8 +12,7 @@
     "postbuild": "next-sitemap --config sitemap.config.cjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio",
-    "sources-test": "tsx sources-test.ts"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.3",

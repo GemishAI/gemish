@@ -1,5 +1,6 @@
 "use client";
 
+import { useModel } from "@/chat/hooks/useModel";
 import { useChat as useAIChat } from "@ai-sdk/react";
 import { createIdGenerator, generateId, type Message } from "ai";
 import { useRouter } from "next/navigation";
@@ -16,8 +17,6 @@ import {
 } from "react";
 import { useSWRConfig } from "swr";
 import { useDebouncedCallback } from "use-debounce";
-
-import { useModel } from "@/chat/hooks/useModel";
 import { ChatContextType } from "./types/chat-types";
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -77,7 +76,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ({ messages, id }: { messages: Message[]; id: string }) => {
         // If we have a pending message for the active chat, prioritize it
         if (id && pendingMessages[id]) {
-          return { message: pendingMessages[id], id };
+          return { message: pendingMessages[id], id, model };
         }
 
         // Otherwise, send the last message in the conversation
@@ -317,9 +316,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isThinkActive,
   };
 
-  return (
-    <ChatContext.Provider value={context}>{children}</ChatContext.Provider>
-  );
+  return <ChatContext value={context}>{children}</ChatContext>;
 }
 
 export function useChat(): ChatContextType {
