@@ -177,7 +177,7 @@ export async function GET(req: Request) {
       title: metadata.title || "No title found",
       description: metadata.description || "No description found",
       favicon: metadata.image || getFaviconUrl(finalUrl),
-      finalUrl: metadata.url,
+      finalUrl: finalUrl,
     };
 
     return NextResponse.json(response);

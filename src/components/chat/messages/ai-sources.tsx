@@ -1,16 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 import useSWR from "swr";
@@ -60,57 +56,6 @@ function useSourceMetadata(url: string) {
     isLoading,
   };
 }
-
-// Source item component for the list view
-const SourceItem = ({
-  source,
-  index,
-}: {
-  source: EnrichedSource;
-  index: number;
-}) => {
-  const { metadata, isLoading } = useSourceMetadata(source.url);
-
-  // Title fallback logic
-  const title = metadata?.title || metadata?.finalUrl;
-
-  return (
-    <Link
-      href={metadata?.finalUrl!}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center bg-secondary border border-muted rounded-md px-3 py-2 hover:bg-muted transition-colors min-w-60 max-w-60"
-    >
-      <div className="flex items-center w-full">
-        <span className="font-mono text-xs text-muted-foreground mr-2 w-4 h-4 flex items-center justify-center rounded-full bg-muted flex-shrink-0">
-          {index + 1}
-        </span>
-        <div className="w-5 h-5 mr-2 flex-shrink-0 bg-white rounded-sm overflow-hidden shadow-sm">
-          <img
-            src={metadata?.favicon}
-            alt=""
-            width={20}
-            height={20}
-            className="w-5 h-5"
-          />
-        </div>
-        <div className="flex flex-col overflow-hidden">
-          <div className="text-sm font-medium text-foreground truncate">
-            {isLoading ? (
-              <Skeleton className="h-4 w-32" />
-            ) : (
-              truncate(title, 40)
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground truncate">
-            {metadata?.finalUrl}
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-};
-
 // Source detail component for the sheet view
 const SourceDetail = ({
   source,
@@ -123,7 +68,7 @@ const SourceDetail = ({
 
   return (
     <Link
-      href={metadata?.finalUrl!}
+      href={metadata?.finalUrl || source.url}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-start bg-secondary/50 border border-muted rounded-md p-3 hover:bg-muted transition-colors w-full"
@@ -166,7 +111,11 @@ const SourceDetail = ({
             )}
           </div>
           <p className="text-sm text-muted-foreground mb-2">
-            {isLoading ? <Skeleton className="h-4 w-48" /> : metadata?.finalUrl}
+            {isLoading ? (
+              <Skeleton className="h-4 w-48" />
+            ) : metadata?.finalUrl ? (
+              new URL(metadata.finalUrl).hostname
+            ) : null}
           </p>
         </div>
       </div>
@@ -178,6 +127,36 @@ const SourceDetail = ({
 const truncate = (text: string | undefined, maxLength: number): string => {
   if (!text || text.length <= maxLength) return text || "";
   return `${text.substring(0, maxLength)}...`;
+};
+
+const FaviconItem = ({
+  source,
+  index,
+}: {
+  source: EnrichedSource;
+  index: number;
+}) => {
+  const { metadata } = useSourceMetadata(source.url);
+
+  return (
+    <div
+      key={source.id}
+      className="w-6 h-6 rounded-sm bg-white shadow-sm border border-border overflow-hidden"
+      style={{
+        position: "relative",
+        marginLeft: index === 0 ? "0" : "-8px",
+        zIndex: 4 - index,
+      }}
+    >
+      {metadata?.favicon && (
+        <img
+          src={metadata.favicon}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      )}
+    </div>
+  );
 };
 
 export const AISourcesList: React.FC<AISourcesListProps> = ({ sources }) => {
@@ -192,69 +171,40 @@ export const AISourcesList: React.FC<AISourcesListProps> = ({ sources }) => {
     };
   });
 
-  const visibleSourceCount =
-    processedSources.length <= 3 ? processedSources.length : 2;
-
   return (
     <div className="flex flex-col gap-3 w-full">
-      <div className="flex items-center justify-between w-full">
-        <h1 className="text-sm font-medium text-muted-foreground">Sources</h1>
-        {processedSources.length > 0 && (
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs font-medium bg-secondary text-foreground hover:bg-muted flex items-center gap-1 h-7 px-3 border border-muted rounded-md ml-4"
-              >
-                Show all ({processedSources.length})
-                <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[700px] sm:w-[740px]">
-              <SheetHeader>
-                <SheetTitle className="text-xl">
-                  Sources ({processedSources.length})
-                </SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-col gap-3 px-2 overflow-y-auto max-h-[calc(100vh-120px)]">
-                {processedSources.map((source, index) => (
-                  <SourceDetail
-                    key={`source-detail-${source.id}`}
-                    source={source}
-                    index={index}
-                  />
-                ))}
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
+      <div
+        className="flex items-center cursor-pointer bg-secondary/50 border border-muted rounded-full w-fit px-3 py-2 hover:bg-muted transition-colors"
+        onClick={() => setIsSheetOpen(true)}
+      >
+        <div className="flex items-center relative">
+          {processedSources.slice(0, 4).map((source, index) => (
+            <FaviconItem key={source.id} source={source} index={index} />
+          ))}
+        </div>
+        <span className="ml-2 text-sm text-muted-foreground">
+          {processedSources.length} web pages
+        </span>
       </div>
-      <ScrollArea className="w-full overflow-x-auto">
-        <div className="flex gap-2 pb-2">
-          {processedSources
-            .slice(0, visibleSourceCount)
-            .map((source, index) => (
-              <SourceItem
-                key={`source-${source.id}`}
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="right" className="w-[700px] sm:w-[740px]">
+          <SheetHeader className="sticky inset-x-0 top-0 bg-background">
+            <SheetTitle className="text-xl">
+              Sources ({processedSources.length})
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-3 px-2 mt-[12px] overflow-y-auto">
+            {processedSources.map((source, index) => (
+              <SourceDetail
+                key={`source-detail-${source.id}`}
                 source={source}
                 index={index}
               />
             ))}
-          {processedSources.length > 3 && visibleSourceCount === 2 && (
-            <div className="min-w-60 max-w-60 flex items-center justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs font-medium bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-1 h-full w-full border border-dashed border-muted rounded-md"
-                onClick={() => setIsSheetOpen(true)}
-              >
-                +{processedSources.length - 2} more sources
-              </Button>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

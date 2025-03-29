@@ -15,7 +15,6 @@ import { ChatInput } from "./chat-input";
 import { ChatMarkdown } from "./chat-markdown";
 import { AIErrorMessage } from "./messages/ai-error-messge";
 import { AILoading } from "./messages/ai-loading";
-import { AIReasoning } from "./messages/ai-reasoning";
 import { AISourcesList } from "./messages/ai-sources";
 import { MessageAttachments } from "./messages/message-attachments";
 
@@ -117,18 +116,18 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                   </div>
                 ) : (
                   <div className="w-full flex flex-col items-start gap-2">
-                    {/* Reasoning Component */}
+                    {/* Sources List Component */}
                     {message.parts &&
-                      message.parts.filter((part) => part.type === "reasoning")
+                      message.parts.filter((part) => part.type === "source")
                         .length > 0 && (
-                        <AIReasoning
-                          reasoningParts={message.parts.filter(
-                            (part) => part.type === "reasoning"
-                          )}
+                        <AISourcesList
+                          sources={message.parts
+                            .filter((part) => part.type === "source")
+                            .map((part) => part.source)}
                         />
                       )}
 
-                    {/* Render text parts after reasoning */}
+                    {/* Render text parts after sources list */}
                     {message.parts &&
                       message.parts.map((part, index) => {
                         if (part.type === "text") {
@@ -141,17 +140,6 @@ export function ChatInterface({ id }: ChatInterfaceProps) {
                         }
                         return null;
                       })}
-
-                    {/* Check if sources exists in message.parts */}
-                    {message.parts &&
-                      message.parts.filter((part) => part.type === "source")
-                        .length > 0 && (
-                        <AISourcesList
-                          sources={message.parts
-                            .filter((part) => part.type === "source")
-                            .map((part) => part.source)}
-                        />
-                      )}
                   </div>
                 )}
               </MessageComponent>
