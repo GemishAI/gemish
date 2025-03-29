@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import useSWR from "swr";
@@ -101,9 +102,9 @@ const SourceDetail = ({
             {isLoading ? (
               <Skeleton className="w-8 h-8" />
             ) : (
-              <img
-                src={metadata?.favicon}
-                alt=""
+              <Image
+                src={metadata?.favicon || ""}
+                alt={metadata?.title || ""}
                 width={32}
                 height={32}
                 className="w-8 h-8"
@@ -149,9 +150,11 @@ const FaviconItem = ({
       }}
     >
       {metadata?.favicon && (
-        <img
+        <Image
           src={metadata.favicon}
-          alt=""
+          alt={metadata?.title || ""}
+          width={24}
+          height={24}
           className="w-full h-full object-cover"
         />
       )}
